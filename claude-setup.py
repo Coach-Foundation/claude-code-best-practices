@@ -156,7 +156,7 @@ def get_settings():
         "env": {
             "MAX_THINKING_TOKENS": "10000",
             "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
-            "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "75"
+            "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "85"
         },
         "hooks": {
             "Notification": [
@@ -200,6 +200,17 @@ def get_settings():
                         }
                     ]
                 }
+            ],
+            "Stop": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": os.path.join(HOOKS_DIR, "stop-self-review.sh"),
+                            "statusMessage": "Verifying work completeness..."
+                        }
+                    ]
+                }
             ]
         },
         "statusLine": {
@@ -207,8 +218,7 @@ def get_settings():
             "command": "npx -y ccstatusline@latest",
             "padding": 0
         },
-        "model": "sonnet",
-        "effortLevel": "medium"
+        "model": "sonnet"
     }
     return settings
 
@@ -291,6 +301,74 @@ fi
 HOOK_PRE_COMPACT = """#!/bin/bash
 # Warn before context compaction and dump critical state
 echo '{"systemMessage":"Context compaction occurring. Preserving critical state in STATUS.md."}'
+"""
+
+HOOK_STOP_SELF_REVIEW = """#!/bin/bash
+# Stop hook: only require self-review if code was written or edited this session.
+# For pure Q&A sessions this exits silently (zero token cost).
+
+ARGS="${ARGUMENTS:-{}}"
+
+STOP_HOOK_ACTIVE=$(echo "$ARGS" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    print(str(d.get('stop_hook_active', False)).lower())
+except:
+    print('false')
+" 2>/dev/null)
+
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+    echo '{"decision": "allow"}'
+    exit 0
+fi
+
+TRANSCRIPT_PATH=$(echo "$ARGS" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    print(d.get('transcript_path', ''))
+except:
+    print('')
+" 2>/dev/null)
+
+if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
+    echo '{"decision": "allow"}'
+    exit 0
+fi
+
+HAS_CODE_CHANGES=$(python3 -c "
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        transcript = json.load(f)
+    for msg in transcript.get('messages', []):
+        if msg.get('role') == 'assistant':
+            for block in msg.get('content', []):
+                if isinstance(block, dict) and block.get('type') == 'tool_use':
+                    if block.get('name') in ('Write', 'Edit', 'NotebookEdit'):
+                        print('yes')
+                        sys.exit(0)
+    print('no')
+except:
+    print('no')
+" "$TRANSCRIPT_PATH" 2>/dev/null)
+
+if [ "$HAS_CODE_CHANGES" = "yes" ]; then
+    python3 -c "
+import json
+reason = (
+    'Code was written or modified this session. Before stopping, complete the 3-pass self-review: '
+    '(1) Verification: run the full test suite and confirm all tests pass. '
+    '(2) Adversarial Review: what assumptions did you not verify? How will this fail in production? '
+    '(3) Completeness Check: re-read the original request - did you do everything asked? '
+    'Fix any issues found before claiming done.'
+)
+print(json.dumps({'decision': 'block', 'reason': reason}))
+"
+else
+    echo '{"decision": "allow"}'
+fi
 """
 
 
@@ -468,6 +546,7 @@ def setup():
     write_file(os.path.join(HOOKS_DIR, "pre-commit-check.sh"), HOOK_PRE_COMMIT, executable=True)
     write_file(os.path.join(HOOKS_DIR, "session-start.sh"), HOOK_SESSION_START, executable=True)
     write_file(os.path.join(HOOKS_DIR, "pre-compact.sh"), HOOK_PRE_COMPACT, executable=True)
+    write_file(os.path.join(HOOKS_DIR, "stop-self-review.sh"), HOOK_STOP_SELF_REVIEW, executable=True)
 
     # Install .claudeignore (per-project template in home dir)
     print("\n5. Installing .claudeignore template...")
