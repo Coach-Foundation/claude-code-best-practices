@@ -27,8 +27,7 @@ New to Claude Code or want optimized defaults? One-command setup (backs up your 
 ```bash
 git clone https://github.com/Coach-Foundation/claude-code-best-practices.git
 cd claude-code-best-practices
-python3 claude-setup.py    # Mac/Linux
-python claude-setup.py     # Windows
+python3 claude-setup.py || python claude-setup.py
 ```
 
 Then use `cc` instead of `claude` to start.
