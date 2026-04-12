@@ -207,6 +207,7 @@ def get_settings():
             "command": "npx -y ccstatusline@latest",
             "padding": 0
         },
+        "model": "sonnet",
         "effortLevel": "medium"
     }
     return settings
