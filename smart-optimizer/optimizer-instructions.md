@@ -36,6 +36,12 @@ These are new settings/features the user doesn't have. Add them unless the user 
 - CLAUDE_CODE_SUBAGENT_MODEL: Routes subagents to Haiku (~15x cheaper). Subagents read files and return summaries - they don't need full reasoning.
 - CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: Triggers compaction at 75% instead of 95%, giving more buffer.
 
+**Default model** (add if missing):
+```json
+"model": "sonnet"
+```
+- Defaults to Sonnet for everyday work. Sonnet handles ~80% of coding tasks well at ~4x less cost than Opus. Users can type `ultrathink` for one-off deep reasoning or `/model opus` when they genuinely need it.
+
 **CLAUDE.md Context Efficiency section** (add if not present):
 ```markdown
 ## Context Efficiency
