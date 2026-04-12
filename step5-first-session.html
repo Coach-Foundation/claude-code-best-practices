@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Setup - Step 5</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #1a1a2e;
+    line-height: 1.6;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #4a7c59;
+    width: 71.43%;
+  }
+
+  .step-counter {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    font-weight: 700;
+  }
+
+  .content {
+    flex: 1;
+    margin-bottom: 40px;
+  }
+
+  p {
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: #333;
+  }
+
+  .step-block {
+    background: #f8fdf9;
+    border: 1px solid #d0dcc4;
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 6px;
+  }
+
+  .step-number {
+    font-weight: 700;
+    color: #3a6349;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .step-text {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.5;
+  }
+
+  .code-snippet {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+    margin: 8px 0;
+  }
+
+  .example-prompt {
+    background: #fff4e6;
+    border-left: 4px solid #d4a574;
+    padding: 12px 14px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .tip {
+    background: #f0f8ff;
+    border-left: 4px solid #4a7c59;
+    padding: 12px 14px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: #1a1a2e;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 30px;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .back-link {
+    font-size: 13px;
+    color: #999;
+    text-decoration: none;
+  }
+  .back-link:hover {
+    color: #666;
+  }
+
+  .next-button {
+    background: #4a7c59;
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s;
+  }
+  .next-button:hover {
+    background: #3a6349;
+  }
+</style>
+</head>
+<body>
+
+  <div class="progress-bar">
+    <div class="progress-fill"></div>
+  </div>
+
+  <div class="step-counter">Step 5 of 7</div>
+
+  <div class="content">
+    <h1>Your First Real Task</h1>
+
+    <div class="step-block">
+      <div class="step-number">Step 1: Navigate to your project</div>
+      <div class="step-text">Open Terminal and navigate to a folder you want to work on:</div>
+      <div class="code-snippet">cd ~/path/to/your/project</div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-number">Step 2: Start Claude Code</div>
+      <div class="step-text">Type:</div>
+      <div class="code-snippet">cc</div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-number">Step 3: Give Claude something specific</div>
+      <div class="step-text">Be specific about what you want. Here are some example prompts:</div>
+      <div class="example-prompt">
+        "Fix the bug in src/login.js where the password field doesn't validate"
+      </div>
+      <div class="example-prompt">
+        "Write a function to parse CSV files in main.py and add tests for it"
+      </div>
+      <div class="example-prompt">
+        "Review my API error handling in app/routes.py for best practices"
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-number">Step 4: When you're done</div>
+      <div class="step-text">Type <span style="font-family: 'SF Mono', monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">handoff</span> to save progress, then <span style="font-family: 'SF Mono', monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">/exit</span> to leave.</div>
+    </div>
+
+    <div class="tip">
+      Keep sessions focused on one task. Use <span style="font-family: 'SF Mono', monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">/clear</span> between unrelated tasks to stay efficient.
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="step4-commands.html" class="back-link">Back</a>
+    <a href="step6-tips.html" class="next-button">Next</a>
+  </div>
+
+</body>
+</html>
