@@ -88,6 +88,10 @@ CLAUDE_MD_BODY = r"""
 - **Context7:** Before implementing ANY library/framework/API, check the latest docs. Do not rely on training data.
 - Never ask for permission to search the web. Just do it.
 
+## Open Source First
+- Before writing custom code for any non-trivial problem (parsing, auth, validation, queuing, caching, etc.), check if a well-maintained open-source library already solves it.
+- Prefer established libraries over custom implementations unless there is a specific reason not to (licensing, bundle size, security, no good option exists).
+
 ## Testing
 - Every piece of code must have tests. No exceptions.
 - Run tests after writing them. If tests fail, fix the code not the tests (unless the test is wrong).
