@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Best Practices - Save Tokens, Work Faster</title>
+<style>
+  @page { size: A4; margin: 1.5cm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #1a1a2e;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    background: #fff;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 30px 0 20px;
+    border-bottom: 3px solid #d4a574;
+    margin-bottom: 30px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.5px;
+  }
+  .header .subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  /* Section headers */
+  h2 {
+    font-size: 20px;
+    color: #d4a574;
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+  }
+  h3 {
+    font-size: 15px;
+    color: #333;
+    margin: 16px 0 6px;
+  }
+
+  /* Content */
+  p { margin: 8px 0; font-size: 14px; }
+
+  /* Tip cards */
+  .tip {
+    background: #faf7f4;
+    border-left: 4px solid #d4a574;
+    padding: 14px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    page-break-inside: avoid;
+  }
+  .tip .label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a2e;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .tip p { margin: 4px 0; font-size: 13px; color: #444; }
+
+  /* Impact badges */
+  .impact {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .impact.high { background: #e8f5e9; color: #2e7d32; }
+  .impact.medium { background: #fff3e0; color: #e65100; }
+
+  /* Code blocks */
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #f5f0eb;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #c7254e;
+  }
+  .code-block {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    margin: 10px 0;
+    overflow-x: auto;
+    white-space: pre;
+    page-break-inside: avoid;
+  }
+  .code-block .comment { color: #6a9955; }
+  .code-block .key { color: #9cdcfe; }
+  .code-block .string { color: #ce9178; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #faf7f4;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    border-bottom: 2px solid #d4a574;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  tr:nth-child(even) { background: #fafafa; }
+
+  /* Callout */
+  .callout {
+    background: #fff8e1;
+    border: 1px solid #ffcc02;
+    padding: 14px 16px;
+    border-radius: 6px;
+    margin: 16px 0;
+    page-break-inside: avoid;
+  }
+  .callout .icon { font-size: 18px; margin-right: 6px; }
+
+  /* Quick reference */
+  .quick-ref {
+    background: #f0f4f8;
+    border: 1px solid #d0d8e0;
+    padding: 16px;
+    border-radius: 6px;
+    margin: 16px 0;
+    page-break-inside: avoid;
+  }
+  .quick-ref h3 { margin-top: 0; }
+  .quick-ref ul { padding-left: 18px; }
+  .quick-ref li { font-size: 13px; margin: 4px 0; }
+
+  /* Footer */
+  .footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+  }
+
+  /* Page break hints */
+  .page-break { page-break-before: always; }
+
+  /* Numbered list */
+  ol { padding-left: 20px; }
+  ol li { font-size: 14px; margin: 6px 0; }
+  ul { padding-left: 20px; }
+  ul li { font-size: 14px; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Claude Code Best Practices</h1>
+  <p class="subtitle">Save tokens, reduce costs, and get better results</p>
+</div>
+
+<p>This guide covers the most impactful ways to make Claude Code faster, cheaper, and more effective. These tips come from official Anthropic documentation, community testing, and real-world benchmarks. No coding knowledge required.</p>
+
+<div class="callout">
+  <strong>The Big Picture:</strong> Every message you send to Claude Code carries your entire conversation history plus configuration files. Small inefficiencies multiply across hundreds of messages. The changes below can reduce your usage by 50-70%.
+</div>
+
+<!-- ============================================================ -->
+<h2>1. Settings That Save Tokens Automatically</h2>
+
+<p>These are one-time changes to your <code>settings.json</code> file. Once set, they work silently in the background.</p>
+
+<div class="tip">
+  <span class="label">Thinking Token Cap <span class="impact high">High Impact</span></span>
+  <p>Claude "thinks" before responding, and those thinking tokens cost 5x more than regular tokens. Capping them at 10,000 (from the default of ~32,000) saves roughly 70% on thinking costs with minimal quality loss.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Cheaper Subagents <span class="impact high">High Impact</span></span>
+  <p>When Claude spawns helper agents (subagents) to work in parallel, they default to using the same expensive model. Routing subagents to Haiku (a faster, cheaper model) saves ~80% on subagent costs. Subagents mostly read files and return summaries - they don't need the full reasoning power.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Effort Level <span class="impact medium">Medium Impact</span></span>
+  <p>The "effort level" controls how deeply Claude reasons about each response. Setting it to "medium" (instead of "high") reduces output tokens by 50-70%. You can always type <code>ultrathink</code> in a message when you need deep reasoning for a hard problem.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Earlier Auto-Compaction <span class="impact medium">Medium Impact</span></span>
+  <p>When your conversation gets too long, Claude automatically compresses it. By default this happens at ~95% capacity. Setting it to 75% triggers compaction much earlier, giving more buffer room and preventing emergency compactions that can lose important context.</p>
+</div>
+
+<h3>How to apply these settings</h3>
+<p>Add this to your <code>~/.claude/settings.json</code> (or ask Claude Code to do it for you):</p>
+<div class="code-block"><span class="key">"env"</span>: {
+  <span class="key">"MAX_THINKING_TOKENS"</span>: <span class="string">"10000"</span>,
+  <span class="key">"CLAUDE_CODE_SUBAGENT_MODEL"</span>: <span class="string">"haiku"</span>,
+  <span class="key">"CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"</span>: <span class="string">"75"</span>
+},
+<span class="key">"effortLevel"</span>: <span class="string">"medium"</span></div>
+
+<!-- ============================================================ -->
+<h2 class="page-break">2. Keep Your CLAUDE.md Small</h2>
+
+<p>Your <code>CLAUDE.md</code> file is loaded into <strong>every single message</strong> you send. A large file means thousands of extra tokens on every turn.</p>
+
+<div class="callout">
+  <strong>The Rule of Thumb:</strong> Keep CLAUDE.md under 100 lines. Think of it as an email with links, not an employee handbook.
+</div>
+
+<table>
+  <tr><th>Do</th><th>Don't</th></tr>
+  <tr>
+    <td>Short, specific rules Claude can't guess</td>
+    <td>Long explanations of standard practices</td>
+  </tr>
+  <tr>
+    <td>Move specialized workflows into Skills</td>
+    <td>Cram everything into one file</td>
+  </tr>
+  <tr>
+    <td>Link to detailed docs with <code>@path/to/doc.md</code></td>
+    <td>Paste entire API docs inline</td>
+  </tr>
+  <tr>
+    <td>Rules that prevent real mistakes</td>
+    <td>"Write clean, readable code" (Claude does this by default)</td>
+  </tr>
+</table>
+
+<div class="tip">
+  <span class="label">The Test <span class="impact high">High Impact</span></span>
+  <p>For every line in your CLAUDE.md, ask: "Would Claude make a mistake without this?" If the answer is no, delete it. Each unnecessary line costs you tokens on every single message.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. File Exclusions (.claudeignore)</h2>
+
+<p>Add exclusions to your project's <code>.gitignore</code> file, or create a <code>.claudeignore</code> in your project root. This prevents Claude from accidentally reading or indexing large, irrelevant files. (Claude respects <code>.gitignore</code> by default - a dedicated <code>.claudeignore</code> is optional for additional exclusions.)</p>
+
+<div class="code-block"><span class="comment"># Add these to .gitignore or .claudeignore</span>
+node_modules/
+dist/
+build/
+.next/
+*.lock
+__pycache__/
+.git/
+*.db
+*.sqlite
+*.log
+coverage/
+*.min.js
+*.min.css
+vendor/</div>
+
+<p>One user reported that just adding <code>.next/</code> cut their context usage by 30-40% in a Next.js project.</p>
+
+<!-- ============================================================ -->
+<h2 class="page-break">4. Session Habits That Save Tokens</h2>
+
+<p>These are behavior changes - no configuration needed, just awareness.</p>
+
+<div class="tip">
+  <span class="label">Keep Sessions Short <span class="impact high">High Impact</span></span>
+  <p>Token cost accelerates as conversations grow. By message 30, a single prompt costs ~167,000 tokens because the entire history is re-sent. Start fresh sessions for new tasks. A series of short sessions is dramatically cheaper than one long marathon.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Never Resume Old Sessions <span class="impact high">High Impact</span></span>
+  <p>Resuming a day-old conversation forces Claude to re-process the entire history at full price (the cache has expired). Multiple users reported losing 20-28% of their usage window on a single resumed message. Start a new session instead.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Mind the 5-Minute Cache <span class="impact medium">Medium Impact</span></span>
+  <p>After 5 minutes of inactivity, the prompt cache expires. Your next message costs roughly 10x more because everything gets reprocessed. If you step away for coffee, your return message is expensive. Subscription users get a 1-hour cache, which helps significantly.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Use /clear Between Tasks <span class="impact medium">Medium Impact</span></span>
+  <p>Type <code>/clear</code> when switching to an unrelated task. Accumulated context from the previous task wastes tokens on every subsequent message. A clean slate is almost always cheaper.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Use /btw for Side Questions <span class="impact medium">Medium Impact</span></span>
+  <p>The <code>/btw</code> command asks a question in a popup that <strong>never enters your conversation history</strong>. Perfect for quick questions like "what does this error mean?" without bloating your context. Can reduce token usage by up to 50% in question-heavy sessions.</p>
+</div>
+
+<div class="tip">
+  <span class="label">After 2 Failed Fixes, Start Fresh <span class="impact medium">Medium Impact</span></span>
+  <p>If Claude is going in circles trying to fix something, type <code>/clear</code> and write a better prompt that includes what you learned from the failed attempts. A clean session with a good prompt beats a bloated session with accumulated confusion.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 class="page-break">5. Writing Better Prompts</h2>
+
+<p>How you phrase requests directly affects how many tokens Claude uses to respond.</p>
+
+<table>
+  <tr><th>Instead of this...</th><th>Try this...</th></tr>
+  <tr>
+    <td>"How does the auth system work?"</td>
+    <td>"In <code>src/auth/middleware.ts</code>, how does token refresh work?"</td>
+  </tr>
+  <tr>
+    <td>"Fix the bug"</td>
+    <td>"The login form crashes when email is empty. Error: [paste error]. Fix in <code>src/components/Login.tsx</code>"</td>
+  </tr>
+  <tr>
+    <td>"Improve this codebase"</td>
+    <td>"Add input validation to the signup function in <code>api/users.js</code>"</td>
+  </tr>
+  <tr>
+    <td>"Run all the tests"</td>
+    <td>"Run tests for the auth module only"</td>
+  </tr>
+</table>
+
+<div class="tip">
+  <span class="label">Be Specific, Save Tokens</span>
+  <p>Vague prompts trigger broad codebase scanning - Claude reads dozens of files trying to understand what you mean. Specific prompts with file paths let Claude work with 1-2 files instead of 20. That difference compounds across every subsequent message.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Paste Errors, Don't Describe Them</span>
+  <p>Copy-paste the actual error message, stack trace, or CI output. Your description loses details Claude needs and costs extra tokens for less information.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>6. Model Selection</h2>
+
+<p>Claude Code can use different models for different tasks. Matching the model to the task saves significant tokens.</p>
+
+<table>
+  <tr><th>Model</th><th>Best For</th><th>Relative Cost</th></tr>
+  <tr>
+    <td><strong>Haiku</strong></td>
+    <td>File lookups, search, renaming, formatting, repetitive tasks</td>
+    <td>1x (cheapest)</td>
+  </tr>
+  <tr>
+    <td><strong>Sonnet</strong></td>
+    <td>Daily coding, tests, simple edits, code generation</td>
+    <td>~4x</td>
+  </tr>
+  <tr>
+    <td><strong>Opus</strong></td>
+    <td>Complex architecture, subtle debugging, multi-file refactors</td>
+    <td>~15x</td>
+  </tr>
+</table>
+
+<p>Type <code>/model sonnet</code> or <code>/model opus</code> to switch mid-session. Default to Sonnet for everyday work and switch to Opus only when you genuinely need deep reasoning.</p>
+
+<!-- ============================================================ -->
+<h2 class="page-break">7. Useful Commands Quick Reference</h2>
+
+<div class="quick-ref">
+  <h3>Commands You Should Know</h3>
+  <ul>
+    <li><code>/clear</code> - Wipe conversation history and start fresh</li>
+    <li><code>/btw</code> - Ask a side question without adding to history</li>
+    <li><code>/context</code> - See how your token budget is being used</li>
+    <li><code>/cost</code> - See API costs for the current session</li>
+    <li><code>/model [name]</code> - Switch to a different model mid-session</li>
+    <li><code>/effort [level]</code> - Adjust reasoning depth (low/medium/high/max)</li>
+    <li><code>/compact [focus]</code> - Compress context, optionally keeping specific topics</li>
+    <li><code>Escape</code> - Stop Claude mid-action and redirect</li>
+    <li><code>Escape, Escape</code> - Undo the last action entirely</li>
+  </ul>
+</div>
+
+<div class="quick-ref">
+  <h3>Recommended Plugins</h3>
+  <p>Type these inside a Claude Code session to install:</p>
+  <ul>
+    <li><code>/install-plugin superpowers</code> - Structured workflows (planning, debugging, code review)</li>
+    <li><code>/install-plugin context7</code> - Always-current library documentation</li>
+    <li><code>/install-plugin code-simplifier</code> - Code quality reviews</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2>8. What NOT to Do</h2>
+
+<div class="tip">
+  <span class="label">Don't resume old sessions</span>
+  <p>The cache expires after inactivity. Resuming reprocesses everything at full price.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Don't load every MCP server</span>
+  <p>Each MCP server adds token overhead on every message. Only enable what you actually need. Check with <code>/mcp</code>.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Don't edit CLAUDE.md mid-session</span>
+  <p>Changing CLAUDE.md invalidates the prompt cache, making your next message much more expensive.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Don't use Opus for everything</span>
+  <p>Opus costs ~15x more per token than Haiku. Most coding tasks work perfectly fine on Sonnet.</p>
+</div>
+
+<div class="tip">
+  <span class="label">Don't keep iterating in a broken session</span>
+  <p>After 2-3 failed attempts at the same fix, <code>/clear</code> and start over with a better prompt. It's cheaper and usually more effective.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 class="page-break">9. Expected Savings</h2>
+
+<table>
+  <tr><th>Change</th><th>What It Does</th><th>Estimated Savings</th></tr>
+  <tr>
+    <td>Thinking token cap</td>
+    <td>Limits internal reasoning tokens</td>
+    <td>~70% on thinking costs</td>
+  </tr>
+  <tr>
+    <td>Haiku subagents</td>
+    <td>Uses cheaper model for helper tasks</td>
+    <td>~80% on subagent costs</td>
+  </tr>
+  <tr>
+    <td>Effort level: medium</td>
+    <td>Reduces output verbosity</td>
+    <td>50-70% fewer output tokens</td>
+  </tr>
+  <tr>
+    <td>Smaller CLAUDE.md</td>
+    <td>Less config loaded per message</td>
+    <td>Thousands of tokens per turn</td>
+  </tr>
+  <tr>
+    <td>.claudeignore</td>
+    <td>Prevents scanning junk files</td>
+    <td>Prevents context blowups</td>
+  </tr>
+  <tr>
+    <td>Short sessions</td>
+    <td>Keeps context small</td>
+    <td>Up to 3x cheaper overall</td>
+  </tr>
+</table>
+
+<p><strong>Real-world results:</strong> Teams applying these practices report 50-72% cost reductions. One team went from $189/month to $72/month per developer.</p>
+
+<!-- ============================================================ -->
+<h2>10. One-Command Setup</h2>
+
+<p>Want all of these best practices applied automatically? Run this in your terminal:</p>
+
+<div class="code-block"><span class="comment"># Mac/Linux</span>
+git clone https://github.com/Coach-Foundation/claude-code-best-practices.git
+cd my-claude-settings
+python3 claude-setup.py
+
+<span class="comment"># Windows</span>
+git clone https://github.com/Coach-Foundation/claude-code-best-practices.git
+cd my-claude-settings
+python claude-setup.py</div>
+
+<p>This installs optimized settings, CLAUDE.md, .claudeignore, notification hooks, and the <code>cc</code> command. Your existing files are backed up automatically.</p>
+
+<p>Or for a smarter approach that analyzes your existing setup first, see the <strong>Smart Optimizer</strong> - a prompt you paste into Claude Code that reviews your config and merges best practices without overwriting your customizations.</p>
+
+<div class="footer">
+  <p>Based on research from official Anthropic documentation, 15+ Reddit community threads,<br>GitHub issues, and real-world benchmarks. Last updated April 2026.</p>
+</div>
+
+</body>
+</html>
