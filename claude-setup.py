@@ -87,6 +87,7 @@ CLAUDE_MD_BODY = r"""
 ## Tools
 - **Context7:** Before implementing ANY library/framework/API, check the latest docs. Do not rely on training data.
 - Never ask for permission to search the web. Just do it.
+- **Skills:** Before starting any niche or domain-specific task (marketing, SEO, data analysis, etc.), check if a relevant skill exists and recommend using it if so.
 
 ## Open Source First
 - Before writing custom code for any non-trivial problem (parsing, auth, validation, queuing, caching, etc.), check if a well-maintained open-source library already solves it.
