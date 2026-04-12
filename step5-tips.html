@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Code Setup - Step 6</title>
+<title>Claude Code Setup - Step 5</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -29,7 +29,7 @@
   .progress-fill {
     height: 100%;
     background: #4a7c59;
-    width: 85.71%;
+    width: 83.33%;
   }
 
   .step-counter {
@@ -86,6 +86,18 @@
     font-size: 13px;
     color: #444;
     line-height: 1.5;
+  }
+
+  .example-prompt {
+    background: #f5f0eb;
+    border-left: 2px solid #d4a574;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 0 3px 3px 0;
+    font-size: 12px;
+    color: #444;
+    line-height: 1.4;
+    font-style: italic;
   }
 
   .highlight {
@@ -150,7 +162,7 @@
     <div class="progress-fill"></div>
   </div>
 
-  <div class="step-counter">Step 6 of 7</div>
+  <div class="step-counter">Step 5 of 6</div>
 
   <div class="content">
     <h1>Tips That Save You Money</h1>
@@ -174,12 +186,15 @@
 
     <div class="tip-item">
       <div class="tip-number">Tip 4: Be specific in prompts</div>
-      <div class="tip-text">Name exact files, line numbers, and function names instead of vague descriptions. "Fix the bug in src/auth.js on line 45" uses fewer tokens than "something's wrong with the login flow".</div>
+      <div class="tip-text">When possible, point Claude to the specific file or area. For example, "the login page crashes when I leave email empty" is better than "something is broken". If you know the file name, even better: "Fix the bug in src/login.js". The more specific you are, the fewer tokens Claude uses searching.</div>
+      <div class="example-prompt">"Fix the bug in src/login.js where the password field doesn't validate"</div>
+      <div class="example-prompt">"Write a function to parse CSV files in main.py and add tests for it"</div>
+      <div class="example-prompt">"Review my API error handling in app/routes.py for best practices"</div>
     </div>
 
     <div class="tip-item">
-      <div class="tip-number">Tip 5: Use /clear between unrelated tasks</div>
-      <div class="tip-text">Switching from a bug fix to a feature? Type <span class="highlight">/clear</span> first. This drops context from the previous task, so the next one doesn't inherit unnecessary overhead.</div>
+      <div class="tip-number">Tip 5: Reset if Claude gets confused</div>
+      <div class="tip-text">If Claude seems confused or is going in circles, type <span class="highlight">/clear</span> and start over with a better prompt. A fresh start is often faster than trying to correct course.</div>
     </div>
 
     <div class="impact-note">
@@ -188,8 +203,8 @@
   </div>
 
   <div class="footer">
-    <a href="step5-first-session.html" class="back-link">Back</a>
-    <a href="step7-done.html" class="next-button">Next</a>
+    <a href="step4-commands.html" class="back-link">Back</a>
+    <a href="step6-done.html" class="next-button">Next</a>
   </div>
 
 </body>
