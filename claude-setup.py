@@ -160,9 +160,9 @@ def get_settings():
         },
         "env": {
             "MAX_THINKING_TOKENS": "10000",
-            "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
-            "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "85"
+            "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
         },
+        "autoCompactWindow": 1000000,
         "hooks": {
             "Notification": [
                 {
@@ -324,7 +324,7 @@ except:
 " 2>/dev/null)
 
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-    echo '{"decision": "allow"}'
+    echo '{"decision": "approve"}'
     exit 0
 fi
 
@@ -338,7 +338,7 @@ except:
 " 2>/dev/null)
 
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
-    echo '{"decision": "allow"}'
+    echo '{"decision": "approve"}'
     exit 0
 fi
 
@@ -372,7 +372,7 @@ reason = (
 print(json.dumps({'decision': 'block', 'reason': reason}))
 "
 else
-    echo '{"decision": "allow"}'
+    echo '{"decision": "approve"}'
 fi
 """
 
