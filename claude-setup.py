@@ -160,7 +160,8 @@ def get_settings():
         },
         "env": {
             "MAX_THINKING_TOKENS": "10000",
-            "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
+            "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
+            "DISABLE_AUTO_COMPACT": "1"
         },
         "autoCompactWindow": 1000000,
         "hooks": {
