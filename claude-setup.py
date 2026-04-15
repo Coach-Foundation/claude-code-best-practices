@@ -103,9 +103,11 @@ CLAUDE_MD_BODY = r"""
 - Audit third-party skills before trusting them.
 
 ## Context Preservation
-- Update project documentation .md files after completing each logical milestone or at natural breakpoints.
-- Maintain a STATUS.md in the project root tracking: done, in progress, next, blockers/decisions.
 - When starting a new session, read existing .md files first to restore context.
+- If STATUS.md does not exist in the project root, create it immediately before doing any other work. It must include: end goal, done, in progress, next steps, blockers/decisions.
+- Update STATUS.md after every logical milestone - not just at session end. It should always reflect current state.
+- The end goal must always be the first section in STATUS.md. Every session should move toward it. If a task doesn't serve the end goal, flag it.
+- Update project documentation .md files after completing each logical milestone or at natural breakpoints.
 
 ## Transcriptions
 - When the user provides any audio, video, Zoom call, voice memo, or other recording/transcript, always save it as a file inside the current project directory.
