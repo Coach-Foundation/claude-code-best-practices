@@ -107,6 +107,13 @@ CLAUDE_MD_BODY = r"""
 - Maintain a STATUS.md in the project root tracking: done, in progress, next, blockers/decisions.
 - When starting a new session, read existing .md files first to restore context.
 
+## Transcriptions
+- When the user provides any audio, video, Zoom call, voice memo, or other recording/transcript, always save it as a file inside the current project directory.
+- Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
+- Create the `docs/transcriptions/` directory if it does not exist.
+- Include metadata at the top: date, source type, participants (if known), topic/title.
+- Do this automatically without being asked.
+
 ## Context Window Monitoring
 - Do NOT auto-trigger handoff warnings. The user monitors context % in the status bar and will type "handoff" when ready.
 
