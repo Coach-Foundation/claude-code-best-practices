@@ -161,7 +161,7 @@ def get_settings():
         "env": {
             "MAX_THINKING_TOKENS": "10000",
             "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
-            "DISABLE_AUTO_COMPACT": "1"
+            "DISABLE_AUTO_COMPACT": "true"
         },
         "autoCompactWindow": 1000000,
         "hooks": {
