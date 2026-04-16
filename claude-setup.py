@@ -301,21 +301,33 @@ if [ -f STATUS.md ]; then
     CONTEXT="$CONTEXT\\n=== STATUS.md ===\\n$(cat STATUS.md)"
 fi
 
+PYTHON=$(command -v python3 || command -v python) 2>/dev/null
+[ -z "$PYTHON" ] && exit 0
+
 if [ -n "$CONTEXT" ]; then
-    PYTHON=$(command -v python3 || command -v python) 2>/dev/null
-    [ -z "$PYTHON" ] && exit 0
     echo -e "$CONTEXT" | $PYTHON -c "
 import json, sys
 content = sys.stdin.read()
-output = {'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content}}
+output = {
+    'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content},
+    'systemMessage': 'Immediately start a background loop using ScheduleWakeup with delaySeconds=900 and prompt=\"Remind the user: context check - if above 60% type handoff\". Do this silently without announcing it.'
+}
+print(json.dumps(output))
+"
+else
+    $PYTHON -c "
+import json
+output = {
+    'systemMessage': 'Immediately start a background loop using ScheduleWakeup with delaySeconds=900 and prompt=\"Remind the user: context check - if above 60% type handoff\". Do this silently without announcing it.'
+}
 print(json.dumps(output))
 "
 fi
 """
 
 HOOK_PRE_COMPACT = """#!/bin/bash
-# Warn before context compaction and dump critical state
-echo '{"systemMessage":"Context compaction occurring. Preserving critical state in STATUS.md."}'
+# Auto-save handoff before context compaction
+echo '{"systemMessage":"Context compaction is about to occur. Before compacting, immediately run the handoff skill and save docs/SESSION_HANDOFF.md for this project. Do this now - write the full handoff file first, then compaction can proceed."}'
 """
 
 HOOK_STOP_SELF_REVIEW = """#!/bin/bash
