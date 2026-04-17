@@ -123,7 +123,7 @@ CLAUDE_MD_BODY = r"""
 Immediately create or update docs/SESSION_HANDOFF.md with: What We Were Doing, What Was Completed, Current State, Next Steps, Key Files Changed, Commands To Know, Decisions Made, Warnings/Gotchas.
 
 ### On Every Session Start
-If docs/SESSION_HANDOFF.md exists, read it and confirm: "Handoff loaded. Continuing from: [one line summary]"
+Invoke the startup skill immediately (Skill tool, skill="startup") as your very first action, before responding to anything. The hook will have already loaded SESSION_HANDOFF.md and STATUS.md as context - do not re-read them.
 
 ## Git
 - Run `git status` and `git diff --staged` before every commit.
@@ -340,14 +340,31 @@ Run `git rev-parse --git-dir 2>/dev/null` to check if a git repo exists.
 
 If NOT a git repo AND the current directory path starts with ~/Documents/dev/ (or /Users/*/Documents/dev/):
 - Get folder name: `basename $(pwd)`
+- If `.gitignore` does not exist, create one before staging anything:
+  ```
+  node_modules/
+  .env
+  .env.*
+  __pycache__/
+  *.pyc
+  .DS_Store
+  .venv/
+  venv/
+  dist/
+  build/
+  *.log
+  ```
 - Run: `git init && git add . && git commit -m "chore: initial commit" && gh repo create $(basename $(pwd)) --private --source=. --push`
+- If `gh repo create` fails (e.g. name collision), report the error and stop - do not commit to an existing remote
 - Report: "GitHub repo created: [folder-name]"
 
 If already a git repo: report "git: existing"
 
 ## Step 2: STATUS.md
 
-If STATUS.md does not exist in the current directory: create it with these sections:
+Only create STATUS.md if the current directory is under ~/Documents/dev/ (or /Users/*/Documents/dev/). Skip entirely for any other directory.
+
+If in a dev directory and STATUS.md does not exist: create it with these sections:
 ```
 # Project Status
 
@@ -377,7 +394,7 @@ List the 3-5 most relevant skills from the available skills list given the proje
 Call ScheduleWakeup with:
 - delaySeconds: 900
 - reason: "15-min context check reminder"
-- prompt: "Invoke the context-reminder skill"
+- prompt: "CONTEXT REMINDER: Tell the user this message verbatim: '**Context check:** If you are above 60%, type handoff to save your session before it is lost.' After sending that message, call ScheduleWakeup again with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
 
 ## Step 5: Summary Line
 
@@ -399,7 +416,7 @@ Tell the user this message (make it visible, not buried):
 Then immediately call ScheduleWakeup with:
 - delaySeconds: 900
 - reason: "15-min context check reminder"
-- prompt: "Invoke the context-reminder skill"
+- prompt: "CONTEXT REMINDER: Tell the user this message verbatim: '**Context check:** If you are above 60%, type handoff to save your session before it is lost.' After sending that message, call ScheduleWakeup again with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
 
 This keeps the loop running every 15 minutes.
 """
