@@ -310,7 +310,7 @@ import json, sys
 content = sys.stdin.read()
 output = {
     'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content},
-    'systemMessage': 'Immediately start a background loop using ScheduleWakeup with delaySeconds=900 and prompt=\"Remind the user: context check - if above 60% type handoff\". Do this silently without announcing it.'
+    'systemMessage': 'Your very first action: invoke the startup skill using the Skill tool with skill=\"startup\". Do this before anything else, including responding to the user.'
 }
 print(json.dumps(output))
 "
@@ -318,11 +318,90 @@ else
     $PYTHON -c "
 import json
 output = {
-    'systemMessage': 'Immediately start a background loop using ScheduleWakeup with delaySeconds=900 and prompt=\"Remind the user: context check - if above 60% type handoff\". Do this silently without announcing it.'
+    'systemMessage': 'Your very first action: invoke the startup skill using the Skill tool with skill=\"startup\". Do this before anything else, including responding to the user.'
 }
 print(json.dumps(output))
 "
 fi
+"""
+
+SKILL_STARTUP = """---
+name: startup
+description: Run at the start of every new session. Checks git repo, creates GitHub private repo if needed, checks STATUS.md, lists key skills, starts context reminder loop.
+---
+
+# Session Startup
+
+Run all steps below, then output a single startup summary line.
+
+## Step 1: Git / GitHub Repo
+
+Run `git rev-parse --git-dir 2>/dev/null` to check if a git repo exists.
+
+If NOT a git repo AND the current directory path starts with ~/Documents/dev/ (or /Users/*/Documents/dev/):
+- Get folder name: `basename $(pwd)`
+- Run: `git init && git add . && git commit -m "chore: initial commit" && gh repo create $(basename $(pwd)) --private --source=. --push`
+- Report: "GitHub repo created: [folder-name]"
+
+If already a git repo: report "git: existing"
+
+## Step 2: STATUS.md
+
+If STATUS.md does not exist in the current directory: create it with these sections:
+```
+# Project Status
+
+## End Goal
+[describe the end goal here]
+
+## Done
+- nothing yet
+
+## In Progress
+- nothing yet
+
+## Next Steps
+- nothing yet
+
+## Blockers / Decisions
+- none
+```
+Report: "STATUS.md: created" or "STATUS.md: exists"
+
+## Step 3: Available Skills
+
+List the 3-5 most relevant skills from the available skills list given the project context. One line each: `- skill-name: what it does`
+
+## Step 4: Context Reminder Loop
+
+Call ScheduleWakeup with:
+- delaySeconds: 900
+- reason: "15-min context check reminder"
+- prompt: "Invoke the context-reminder skill"
+
+## Step 5: Summary Line
+
+Output exactly one line:
+`Session ready | git: [existing / created: repo-name] | STATUS.md: [exists / created] | reminder: started`
+"""
+
+SKILL_CONTEXT_REMINDER = """---
+name: context-reminder
+description: Recurring 15-min context check reminder. Notifies user to check context percentage, then reschedules itself to keep the loop running.
+---
+
+# Context Reminder
+
+Tell the user this message (make it visible, not buried):
+
+> **Context check:** If you're above 60%, type `handoff` to save your session before it's lost.
+
+Then immediately call ScheduleWakeup with:
+- delaySeconds: 900
+- reason: "15-min context check reminder"
+- prompt: "Invoke the context-reminder skill"
+
+This keeps the loop running every 15 minutes.
 """
 
 HOOK_PRE_COMPACT = """#!/bin/bash
@@ -574,6 +653,16 @@ def setup():
     write_file(os.path.join(HOOKS_DIR, "session-start.sh"), HOOK_SESSION_START, executable=True)
     write_file(os.path.join(HOOKS_DIR, "pre-compact.sh"), HOOK_PRE_COMPACT, executable=True)
     write_file(os.path.join(HOOKS_DIR, "stop-self-review.sh"), HOOK_STOP_SELF_REVIEW, executable=True)
+
+    # Write skills
+    print("\n4b. Installing skills...")
+    SKILLS_DIR = os.path.join(CLAUDE_DIR, "skills")
+    startup_dir = os.path.join(SKILLS_DIR, "startup")
+    context_reminder_dir = os.path.join(SKILLS_DIR, "context-reminder")
+    os.makedirs(startup_dir, exist_ok=True)
+    os.makedirs(context_reminder_dir, exist_ok=True)
+    write_file(os.path.join(startup_dir, "SKILL.md"), SKILL_STARTUP)
+    write_file(os.path.join(context_reminder_dir, "SKILL.md"), SKILL_CONTEXT_REMINDER)
 
     # Install .claudeignore (per-project template in home dir)
     print("\n5. Installing .claudeignore template...")
