@@ -288,84 +288,30 @@ git status --short 2>/dev/null
 """
 
 HOOK_SESSION_START = """#!/bin/bash
-# Load session context on startup
-# Outputs any existing handoff or status docs as additionalContext for Claude
+# Session startup: initialize project state in bash, then inject context Claude can read
 
+HOME_DEV="$HOME/Documents/dev"
+CWD=$(pwd)
 CONTEXT=""
+REPO_CREATED=""
 
-if [ -f docs/SESSION_HANDOFF.md ]; then
-    CONTEXT="$CONTEXT\\n=== SESSION_HANDOFF.md ===\\n$(cat docs/SESSION_HANDOFF.md)"
+# Git repo check - only in ~/Documents/dev/*
+if [[ "$CWD" == "$HOME_DEV"/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; then
+    FOLDER=$(basename "$CWD")
+    if [ ! -f .gitignore ]; then
+        printf 'node_modules/\\n.env\\n.env.*\\n__pycache__/\\n*.pyc\\n.DS_Store\\n.venv/\\nvenv/\\ndist/\\nbuild/\\n*.log\\n' > .gitignore
+    fi
+    git init -q && git add . && git commit -q -m "chore: initial commit" 2>/dev/null
+    if gh repo create "$FOLDER" --private --source=. --push --quiet 2>/dev/null; then
+        REPO_CREATED="GitHub repo '$FOLDER' created and pushed."
+    else
+        REPO_CREATED="git init done but gh repo create failed (name collision or gh not authed)."
+    fi
 fi
 
-if [ -f STATUS.md ]; then
-    CONTEXT="$CONTEXT\\n=== STATUS.md ===\\n$(cat STATUS.md)"
-fi
-
-PYTHON=$(command -v python3 || command -v python) 2>/dev/null
-[ -z "$PYTHON" ] && exit 0
-
-if [ -n "$CONTEXT" ]; then
-    echo -e "$CONTEXT" | $PYTHON -c "
-import json, sys
-content = sys.stdin.read()
-output = {
-    'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content},
-    'systemMessage': 'Your very first action: invoke the startup skill using the Skill tool with skill=\"startup\". Do this before anything else, including responding to the user.'
-}
-print(json.dumps(output))
-"
-else
-    $PYTHON -c "
-import json
-output = {
-    'systemMessage': 'Your very first action: invoke the startup skill using the Skill tool with skill=\"startup\". Do this before anything else, including responding to the user.'
-}
-print(json.dumps(output))
-"
-fi
-"""
-
-SKILL_STARTUP = """---
-name: startup
-description: Run at the start of every new session. Checks git repo, creates GitHub private repo if needed, checks STATUS.md, lists key skills, starts context reminder loop.
----
-
-# Session Startup
-
-Run all steps below, then output a single startup summary line.
-
-## Step 1: Git / GitHub Repo
-
-Run `git rev-parse --git-dir 2>/dev/null` to check if a git repo exists.
-
-If NOT a git repo AND the current directory path starts with ~/Documents/dev/ (or /Users/*/Documents/dev/):
-- Get folder name: `basename $(pwd)`
-- If `.gitignore` does not exist, create one before staging anything:
-  ```
-  node_modules/
-  .env
-  .env.*
-  __pycache__/
-  *.pyc
-  .DS_Store
-  .venv/
-  venv/
-  dist/
-  build/
-  *.log
-  ```
-- Run: `git init && git add . && git commit -m "chore: initial commit" && gh repo create $(basename $(pwd)) --private --source=. --push`
-- If `gh repo create` fails (e.g. name collision), report the error and stop - do not commit to an existing remote
-- Report: "GitHub repo created: [folder-name]"
-
-If already a git repo: report "git: existing"
-
-## Step 2: STATUS.md
-
-Only create STATUS.md if the current directory is under ~/Documents/dev/ (or /Users/*/Documents/dev/). Skip entirely for any other directory.
-
-If in a dev directory and STATUS.md does not exist: create it with these sections:
-```
+# STATUS.md check - only in ~/Documents/dev/*
+if [[ "$CWD" == "$HOME_DEV"/* ]] && [ ! -f STATUS.md ]; then
+    cat > STATUS.md << 'STATUSMD'
 # Project Status
 
 ## End Goal
@@ -382,24 +328,58 @@ If in a dev directory and STATUS.md does not exist: create it with these section
 
 ## Blockers / Decisions
 - none
-```
-Report: "STATUS.md: created" or "STATUS.md: exists"
+STATUSMD
+fi
 
-## Step 3: Available Skills
+# Load context files
+if [ -f docs/SESSION_HANDOFF.md ]; then
+    CONTEXT="$CONTEXT\\n=== SESSION_HANDOFF.md ===\\n$(cat docs/SESSION_HANDOFF.md)"
+fi
 
-List the 3-5 most relevant skills from the available skills list given the project context. One line each: `- skill-name: what it does`
+if [ -f STATUS.md ]; then
+    CONTEXT="$CONTEXT\\n=== STATUS.md ===\\n$(cat STATUS.md)"
+fi
 
-## Step 4: Context Reminder Loop
+# Startup instruction goes in additionalContext - this is what Claude actually reads
+STARTUP_MSG="\\n[SESSION START]"
+[ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
+STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\\"startup\\") to list relevant skills and start the context reminder loop."
+CONTEXT="$CONTEXT$STARTUP_MSG"
+
+PYTHON=$(command -v python3 || command -v python) 2>/dev/null
+[ -z "$PYTHON" ] && exit 0
+
+echo -e "$CONTEXT" | $PYTHON -c "
+import json, sys
+content = sys.stdin.read()
+print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content}}))
+"
+"""
+
+SKILL_STARTUP = """---
+name: startup
+description: Run at the start of every new session. Lists relevant skills and starts the 15-min context reminder loop.
+---
+
+# Session Startup
+
+The hook has already handled git repo creation and STATUS.md. Your job here is two things:
+
+## Step 1: Relevant Skills
+
+From the available skills list, pick 3-5 most relevant to this project and list them:
+`- skill-name: one line on what it does`
+
+## Step 2: Context Reminder Loop
 
 Call ScheduleWakeup with:
 - delaySeconds: 900
 - reason: "15-min context check reminder"
 - prompt: "CONTEXT REMINDER: Tell the user this message verbatim: '**Context check:** If you are above 60%, type handoff to save your session before it is lost.' After sending that message, call ScheduleWakeup again with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
 
-## Step 5: Summary Line
+## Step 3: Summary
 
-Output exactly one line:
-`Session ready | git: [existing / created: repo-name] | STATUS.md: [exists / created] | reminder: started`
+One line: `Session ready | reminder: started`
 """
 
 SKILL_CONTEXT_REMINDER = """---
