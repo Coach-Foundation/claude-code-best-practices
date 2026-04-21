@@ -243,10 +243,8 @@ def get_notification_hook():
         return {
             "type": "command",
             "command": (
-                "osascript -e 'display notification "
-                "\"Claude Code needs your attention\" "
-                "with title \"Claude Code\" "
-                "sound name \"Hero\"'"
+                "afplay /System/Library/Sounds/Hero.aiff & "
+                "osascript -e 'tell application \"Terminal\" to activate'"
             )
         }
     elif IS_WINDOWS:
