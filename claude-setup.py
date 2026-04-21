@@ -242,10 +242,7 @@ def get_notification_hook():
     if IS_MAC:
         return {
             "type": "command",
-            "command": (
-                "afplay /System/Library/Sounds/Hero.aiff & "
-                "osascript -e 'tell application \"Terminal\" to activate'"
-            )
+            "command": "afplay /System/Library/Sounds/Hero.aiff & open -g /Applications/Utilities/Terminal.app"
         }
     elif IS_WINDOWS:
         return {
