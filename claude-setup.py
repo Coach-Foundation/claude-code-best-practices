@@ -119,8 +119,8 @@ CLAUDE_MD_BODY = r"""
 ## Context Window Monitoring
 - Do NOT auto-trigger handoff warnings. The user monitors context % in the status bar and will type "handoff" when ready.
 
-### When I type "handoff"
-Immediately create or update docs/SESSION_HANDOFF.md with: What We Were Doing, What Was Completed, Current State, Next Steps, Key Files Changed, Commands To Know, Decisions Made, Warnings/Gotchas.
+### When I type "handoff" or "handoff <project>"
+Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is given (e.g. "handoff predmarkets"), the skill writes to `~/Documents/dev/<project>/docs/SESSION_HANDOFF.md` using git state from that directory. If no project name, writes to the current project. Pasting the last ~50 lines of a filled-up session helps capture mid-debug state, but is not required - the skill can reconstruct from git diff + log alone.
 
 ### On Every Session Start
 Invoke the startup skill immediately (Skill tool, skill="startup") as your very first action, before responding to anything. The hook will have already loaded SESSION_HANDOFF.md and STATUS.md as context - do not re-read them.
