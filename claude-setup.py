@@ -109,6 +109,41 @@ CLAUDE_MD_BODY = r"""
 - The end goal must always be the first section in STATUS.md. Every session should move toward it. If a task doesn't serve the end goal, flag it.
 - Update project documentation .md files after completing each logical milestone or at natural breakpoints.
 
+## Project Documentation
+
+For any project with 2+ sessions or multi-phase work, create these files immediately if missing. Do not wait to be asked. At session start: if ROADMAP.md, METRICS.md, or `context/` do not exist in a non-trivial project, create them before any other work.
+
+### ROADMAP.md
+Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
+- Now/Next/Later: outcomes, not tasks
+- Risks table: Risk | Likelihood (1-5) | Impact (1-5) | Mitigation - keep to 3-5 risks max
+Update after completing any milestone or shifting direction.
+
+### METRICS.md
+How we measure success. Table: Metric | Baseline | Target | Current | Last Updated.
+Update at each milestone checkpoint.
+
+### EXPERIMENTS.md
+For AI/ML projects and product experiments. Prevents repeating failed experiments.
+Each entry: Date, Hypothesis, Method, Result, Conclusion, Next Step.
+Skip for pure infrastructure/refactoring work.
+
+### context/ directory
+AI-optimized snapshot for fast session restoration. Update after every logical milestone.
+- `context/state.md` - current phase, immediate next action, recent changes, blockers
+- `context/schema.md` - data structures, interfaces, API contracts, environment variables
+- `context/decisions.md` - non-architectural decisions + one-line reasoning per decision
+- `context/insights.md` - discoveries, gotchas, non-obvious learnings
+
+### docs/adr/ (Architecture Decision Records)
+One file per architectural decision: `docs/adr/NNN-title.md`
+Fields: Status, Context, Decision, Consequences, Alternatives Considered.
+Append-only - never edit past ADRs, write a new one to supersede.
+Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
+
+### docs/research/
+Save reference material, papers, and external docs here before reading so they are available next session.
+
 ## Transcriptions
 - When the user provides any audio, video, Zoom call, voice memo, or other recording/transcript, always save it as a file inside the current project directory.
 - Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
@@ -152,6 +187,12 @@ Every commit must be thorough. Follow this format:
 - Always run long tasks in the background using `run_in_background`.
 - Use subagents for 2+ independent tasks. Never do sequentially what can be done concurrently.
 - Minimize manual work for the user. If you can do it via CLI/API/SSH/scripting, do it.
+
+## Long-Running Processes
+- Any process expected to take >30 seconds: redirect output with `cmd > output.log 2>&1 &` then immediately tail with `tail -f output.log` or Monitor the log file.
+- Never run a long job silently and wait - failures must surface within the first few output lines, not at the end of a wasted run.
+- After starting: check the log within 60s to confirm it is running correctly. If it has errored or stalled, fix it, restart, and check again after 60s.
+- Only once confirmed healthy do you switch to 5-minute (270s) wakeup checks until the job completes.
 
 ## Self-Review Before Claiming Done
 Before saying any task is "done", verify: (1) tests pass, (2) the feature actually works, (3) you did everything asked, (4) no half-modified files remain. If any check fails, fix it before claiming done.
