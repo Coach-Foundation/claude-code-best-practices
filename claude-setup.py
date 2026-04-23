@@ -111,7 +111,7 @@ CLAUDE_MD_BODY = r"""
 
 ## Project Documentation
 
-For any project with 2+ sessions or multi-phase work, create these files immediately if missing. Do not wait to be asked. At session start: if ROADMAP.md, METRICS.md, or `context/` do not exist in a non-trivial project, create them before any other work.
+For any project under ~/Documents/dev/: if STATUS.md exists and ROADMAP.md does not, create ROADMAP.md, METRICS.md, and `context/` immediately at session start - before any other work. Do not wait to be asked.
 
 ### ROADMAP.md
 Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
@@ -132,8 +132,10 @@ Skip for pure infrastructure/refactoring work.
 AI-optimized snapshot for fast session restoration. Update after every logical milestone.
 - `context/state.md` - current phase, immediate next action, recent changes, blockers
 - `context/schema.md` - data structures, interfaces, API contracts, environment variables
-- `context/decisions.md` - non-architectural decisions + one-line reasoning per decision
+- `context/decisions.md` - tactical/operational decisions (tooling, process, config) + one-line reasoning
 - `context/insights.md` - discoveries, gotchas, non-obvious learnings
+
+Note: `context/decisions.md` is for operational decisions. Technology/architecture choices (framework, database, irreversible patterns) belong in `docs/adr/` instead. Do not duplicate entries between the two.
 
 ### docs/adr/ (Architecture Decision Records)
 One file per architectural decision: `docs/adr/NNN-title.md`
@@ -142,7 +144,7 @@ Append-only - never edit past ADRs, write a new one to supersede.
 Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
 
 ### docs/research/
-Save reference material, papers, and external docs here before reading so they are available next session.
+Save reference material, papers, and external docs here before reading so they are available next session. Name files: `YYYY-MM-DD-[topic].md`. Keep a one-line description at the top of each file.
 
 ## Transcriptions
 - When the user provides any audio, video, Zoom call, voice memo, or other recording/transcript, always save it as a file inside the current project directory.
@@ -196,6 +198,18 @@ Every commit must be thorough. Follow this format:
 
 ## Self-Review Before Claiming Done
 Before saying any task is "done", verify: (1) tests pass, (2) the feature actually works, (3) you did everything asked, (4) no half-modified files remain. If any check fails, fix it before claiming done.
+
+## Superpowers
+- Always use superpowers skills wherever applicable. Never skip them because "it's simple."
+- When executing plans: always use `superpowers:subagent-driven-development`. Never ask which approach.
+- Before claiming done: use `superpowers:verification-before-completion`.
+
+## Critical Rules
+- Never make assumptions about account balances, API limits, send volumes, or resource constraints. Always ask or read from config/env.
+- When presenting data/metrics, cross-verify against raw source data. Do not interpolate or estimate. Show exact raw data supporting each number.
+
+## Phase Checkpoints
+- Before starting each new phase of a multi-step task, run a full checkpoint: tests, clean git, 3-line status summary. Do not proceed until green.
 """
 
 
@@ -374,6 +388,14 @@ fi
 
 if [ -f STATUS.md ]; then
     CONTEXT="$CONTEXT\\n=== STATUS.md ===\\n$(cat STATUS.md)"
+fi
+
+# Load context directory files for AI session restoration
+if [ -f context/state.md ]; then
+    CONTEXT="$CONTEXT\\n=== context/state.md ===\\n$(cat context/state.md)"
+fi
+if [ -f context/schema.md ]; then
+    CONTEXT="$CONTEXT\\n=== context/schema.md ===\\n$(cat context/schema.md)"
 fi
 
 # Startup instruction goes in additionalContext - this is what Claude actually reads
