@@ -93,6 +93,35 @@ CLAUDE_MD_BODY = r"""
 - Before writing custom code for any non-trivial problem (parsing, auth, validation, queuing, caching, etc.), check if a well-maintained open-source library already solves it.
 - Prefer established libraries over custom implementations unless there is a specific reason not to (licensing, bundle size, security, no good option exists).
 
+## Software Engineering Principles
+
+When writing new code, embody these. When about to violate one, flag it briefly
+in your response - don't restructure unrequested code, but don't silently
+introduce violations either.
+
+**Always:**
+- **High Cohesion**: each function/class/module does one thing. If you can
+  describe it with "and", split it.
+- **Low Coupling**: application modules interact through minimal, well-defined
+  interfaces. Never reach into another application module's internals.
+- **Encapsulation**: expose only what callers need; everything else is private
+  or internal by default.
+
+**When state is involved:**
+- **Single Source of Truth**: each piece of mutable state has one place where
+  it is written. Reads can be distributed; writes cannot. Never let two
+  components independently modify the same state.
+
+**For multi-module projects (not scripts or single-file utilities):**
+- **Layered Architecture**: if the project has distinct layers (presentation /
+  business logic / data access), respect them. Don't skip layers without
+  flagging it explicitly.
+- **Named pattern**: before writing a new class, service, or design involving
+  multiple interacting components, name the pattern in plain English -
+  event-based (Observer/pub-sub), swappable strategy (Strategy), multiple
+  creation types (Factory Method), integration shim (Adapter), simplified
+  interface (Facade). Name it before writing; if none fits, say so.
+
 ## Testing
 - Every piece of code must have tests. No exceptions.
 - Run tests after writing them. If tests fail, fix the code not the tests (unless the test is wrong).
