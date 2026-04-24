@@ -76,6 +76,7 @@ CLAUDE_MD_BODY = r"""
 - Never re-read a file already read in this session.
 - For files over 500 lines, use offset/limit to read only the relevant section.
 - Use Grep to locate sections before reading entire files.
+- When understanding a component's API contract, read its interface / abstract class / protocol / trait before its implementation - same information, ~75% fewer tokens.
 - When dispatching subagents, end prompts with: "Final response under 2000 characters."
 - Do not paste file contents into subagent prompts. Give them the path and let them read it.
 
@@ -193,6 +194,7 @@ Invoke the startup skill immediately (Skill tool, skill="startup") as your very 
 
 ## Git
 - Run `git status` and `git diff --staged` before every commit.
+- Before committing, verify project docs (STATUS.md, ROADMAP.md, METRICS.md, context/state.md) reflect the current state. Update any that are stale.
 - After completing a logical unit of work, mention once that it is a good time to commit. Do not repeat.
 
 ## Commit Messages
