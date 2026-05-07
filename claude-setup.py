@@ -123,6 +123,10 @@ introduce violations either.
   creation types (Factory Method), integration shim (Adapter), simplified
   interface (Facade). Name it before writing; if none fits, say so.
 
+**Before presenting non-trivial changes:**
+- Pause and ask yourself: "Is there a more elegant way?" If the fix feels hacky, implement the elegant solution instead.
+- Skip for simple, obvious fixes - don't over-engineer.
+
 ## Testing
 - Every piece of code must have tests. No exceptions.
 - Run tests after writing them. If tests fail, fix the code not the tests (unless the test is wrong).
@@ -138,6 +142,12 @@ introduce violations either.
 - Update STATUS.md after every logical milestone - not just at session end. It should always reflect current state.
 - The end goal must always be the first section in STATUS.md. Every session should move toward it. If a task doesn't serve the end goal, flag it.
 - Update project documentation .md files after completing each logical milestone or at natural breakpoints.
+
+## Self-Improvement Loop
+- After ANY correction from the user, append to `tasks/lessons.md` in the project root:
+  `- [YYYY-MM-DD] RULE: <what to do or avoid> | WHY: <reason given>`
+- At session start, if `tasks/lessons.md` exists, read it silently and apply all rules for the session
+- Never delete entries - this file compounds over time
 
 ## Project Documentation
 
@@ -452,7 +462,11 @@ description: Run at the start of every new session. Lists relevant skills and st
 
 # Session Startup
 
-The hook has already handled git repo creation and STATUS.md. Your job here is two things:
+The hook has already handled git repo creation and STATUS.md. Your job here is three things:
+
+## Step 0: Load Project Lessons
+
+If `tasks/lessons.md` exists in the current project root, read it silently and apply all rules before proceeding.
 
 ## Step 1: Relevant Skills
 
@@ -468,7 +482,7 @@ Call ScheduleWakeup with:
 
 ## Step 3: Summary
 
-One line: `Session ready | reminder: started`
+One line: `Session ready | lessons: [loaded N rules / none] | reminder: started`
 """
 
 SKILL_CONTEXT_REMINDER = """---
