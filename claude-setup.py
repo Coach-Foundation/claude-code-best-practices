@@ -87,8 +87,11 @@ CLAUDE_MD_BODY = r"""
 
 ## Tools
 - **Context7:** Before implementing ANY library/framework/API, check the latest docs. Do not rely on training data.
+- **Sequential Thinking:** For complex problems, debugging, architecture decisions, or multi-step planning, automatically activate sequential thinking MCP.
 - Never ask for permission to search the web. Just do it.
 - **Skills:** Before starting any niche or domain-specific task (marketing, SEO, data analysis, etc.), check if a relevant skill exists and recommend using it if so.
+- **grill-me:** When the user has a plan and is about to implement something non-trivial, if grill-me is not in the available skills list, suggest they install it: create `~/.claude/skills/grill-me/skill.md` or re-run `claude-setup.py`.
+- **Marketing skills plugin:** When working on any project involving marketing, growth, copywriting, SEO, content strategy, social media, pricing, sales, product positioning, referrals, or any other business/go-to-market work - enable the marketingskills plugin for that project by adding `"marketing-skills@marketingskills": true` to `enabledPlugins` in `.claude/settings.local.json`. Do this automatically at session start without being asked.
 
 ## Open Source First
 - Before writing custom code for any non-trivial problem (parsing, auth, validation, queuing, caching, etc.), check if a well-maintained open-source library already solves it.
@@ -131,10 +134,14 @@ introduce violations either.
 - Every piece of code must have tests. No exceptions.
 - Run tests after writing them. If tests fail, fix the code not the tests (unless the test is wrong).
 - After any bug fix or feature, run the full test suite before committing.
+- For Python projects, run `pytest` with full output after changes.
 
 ## Security
 - Never put API keys, secrets, or tokens in frontend code. All secrets stay server-side via environment variables.
 - Audit third-party skills before trusting them.
+- Never use a superuser/admin database account for application connections. Use a role scoped to only what the application needs.
+- Apply principle of least privilege: database users, API keys, and service accounts get only the permissions they actually need.
+- For row-level access control, use RLS (Row Level Security) in the database rather than application-layer filtering.
 
 ## Context Preservation
 - When starting a new session, read existing .md files first to restore context.
@@ -199,13 +206,22 @@ Save reference material, papers, and external docs here before reading so they a
 ### When I type "handoff" or "handoff <project>"
 Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is given (e.g. "handoff predmarkets", "handoff ai-caller" - any folder under ~/Documents/dev/), the skill writes to `~/Documents/dev/<project>/docs/SESSION_HANDOFF.md` using git state from that directory. If no project name, writes to the current project. Pasting the last ~50 lines of a filled-up session helps capture mid-debug state, but is not required - the skill can reconstruct from git diff + log alone.
 
+### When I type "ooc" or "running out of context"
+Context is nearly full. Invoke the handoff skill (Skill tool, skill="handoff") for the current project, then reply with exactly: "Session saved. Open a new Claude Code session in this directory and type `read handoff` to resume."
+
 ### On Every Session Start
 Invoke the startup skill immediately (Skill tool, skill="startup") as your very first action, before responding to anything. The hook will have already loaded SESSION_HANDOFF.md and STATUS.md as context - do not re-read them.
 
 ## Git
 - Run `git status` and `git diff --staged` before every commit.
-- Before committing, verify project docs (STATUS.md, ROADMAP.md, METRICS.md, context/state.md) reflect the current state. Update any that are stale.
+- Before committing, scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) and update every one that is stale - do not use a fixed list, check everything that exists.
 - After completing a logical unit of work, mention once that it is a good time to commit. Do not repeat.
+- When I say "update github": check the project CLAUDE.md first - some projects define this differently. Otherwise follow these steps in order: (0) if `docs/SESSION_HANDOFF.md` exists, read it - it captures prior session work that must be included; (1) scan ALL .md files in the project and update every one that is stale; (2) run `git status` and `git diff --stat HEAD`; (3) commit with a thorough message covering work from both the current and prior session if a handoff existed; (4) `git push origin HEAD`; (5) invoke the handoff skill to write `docs/SESSION_HANDOFF.md`.
+- When I say "deploy": do everything "update github" does first (read handoff, update all docs, commit, push, write handoff), then run the deployment. Use the `deploy` skill for the deployment step unless the project CLAUDE.md defines a project-specific deploy process.
+- Enable Dependabot on all new GitHub repos.
+
+## Deployment
+- Before considering any project's deployment complete, verify it can go from a fresh clone to working software with a single setup command (excluding secrets). Document this in a setup script or README.
 
 ## Commit Messages
 Every commit must be thorough. Follow this format:
@@ -504,6 +520,21 @@ Then immediately call ScheduleWakeup with:
 This keeps the loop running every 15 minutes.
 """
 
+SKILL_GRILL_ME = """---
+name: grill-me
+description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
+---
+
+Interview me relentlessly about every aspect of this plan until
+we reach a shared understanding. Walk down each branch of the design
+tree resolving dependencies between decisions one by one.
+
+If a question can be answered by exploring the codebase, explore
+the codebase instead.
+
+For each question, provide your recommended answer.
+"""
+
 HOOK_PRE_COMPACT = """#!/bin/bash
 # Auto-save handoff before context compaction
 echo '{"systemMessage":"Context compaction is about to occur. Before compacting, immediately run the handoff skill and save docs/SESSION_HANDOFF.md for this project. Do this now - write the full handoff file first, then compaction can proceed."}'
@@ -763,6 +794,20 @@ def setup():
     os.makedirs(context_reminder_dir, exist_ok=True)
     write_file(os.path.join(startup_dir, "SKILL.md"), SKILL_STARTUP)
     write_file(os.path.join(context_reminder_dir, "SKILL.md"), SKILL_CONTEXT_REMINDER)
+
+    # Optional: grill-me skill
+    grill_me_dir = os.path.join(SKILLS_DIR, "grill-me")
+    grill_me_path = os.path.join(grill_me_dir, "skill.md")
+    if os.path.exists(grill_me_path):
+        print("  [SKIP] grill-me skill already installed")
+    else:
+        answer = input("\n  Install grill-me skill? Stress-tests plans before implementation (recommended) [Y/n]: ").strip().lower()
+        if answer in ("", "y", "yes"):
+            os.makedirs(grill_me_dir, exist_ok=True)
+            write_file(grill_me_path, SKILL_GRILL_ME)
+            print("  [OK] grill-me skill installed")
+        else:
+            print("  [SKIP] grill-me skill skipped")
 
     # Install .claudeignore (per-project template in home dir)
     print("\n5. Installing .claudeignore template...")
