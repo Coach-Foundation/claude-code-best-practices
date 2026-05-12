@@ -209,6 +209,9 @@ Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is giv
 ### When I type "ooc" or "running out of context"
 Context is nearly full. Invoke the handoff skill (Skill tool, skill="handoff") for the current project, then reply with exactly: "Session saved. Open a new Claude Code session in this directory and type `read handoff` to resume."
 
+### When I type "afk"
+Pause the context reminder loop: run `touch ~/.claude/.afk`. Confirm with: "Reminder paused. The loop restarts automatically on your next message."
+
 ### On Every Session Start
 Invoke the startup skill immediately (Skill tool, skill="startup") as your very first action, before responding to anything. The hook will have already loaded SESSION_HANDOFF.md and STATUS.md as context - do not re-read them.
 
@@ -335,6 +338,16 @@ def get_settings():
                             "type": "command",
                             "command": os.path.join(HOOKS_DIR, "stop-self-review.sh"),
                             "statusMessage": "Verifying work completeness..."
+                        }
+                    ]
+                }
+            ],
+            "UserPromptSubmit": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": os.path.join(HOOKS_DIR, "afk-resume.sh")
                         }
                     ]
                 }
@@ -491,10 +504,12 @@ From the available skills list, pick 3-5 most relevant to this project and list 
 
 ## Step 2: Context Reminder Loop
 
+Clear any leftover AFK flag from a previous session: run `rm -f ~/.claude/.afk`
+
 Call ScheduleWakeup with:
 - delaySeconds: 900
 - reason: "15-min context check reminder"
-- prompt: "CONTEXT REMINDER: Tell the user this message verbatim: '**Context check:** If you are above 60%, type handoff to save your session before it is lost.' After sending that message, call ScheduleWakeup again with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
+- prompt: "CONTEXT REMINDER: First check if AFK mode is active (run: test -f ~/.claude/.afk && echo AFK || echo ACTIVE). If AFK: respond with '**Reminder paused** (AFK mode). Type `afk` again to pause after resuming.' and stop - do NOT call ScheduleWakeup. If ACTIVE: tell the user '**Context check:** If you are above 60%, type `handoff` to save your session before it is lost.' then call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
 
 ## Step 3: Summary
 
@@ -508,14 +523,18 @@ description: Recurring 15-min context check reminder. Notifies user to check con
 
 # Context Reminder
 
-Tell the user this message (make it visible, not buried):
+Check if AFK mode is active (run: `test -f ~/.claude/.afk && echo AFK || echo ACTIVE`).
+
+If AFK: respond with '**Reminder paused** (AFK mode). Type `back` to resume.' and stop - do NOT call ScheduleWakeup.
+
+If ACTIVE: tell the user this message (make it visible, not buried):
 
 > **Context check:** If you're above 60%, type `handoff` to save your session before it's lost.
 
 Then immediately call ScheduleWakeup with:
 - delaySeconds: 900
 - reason: "15-min context check reminder"
-- prompt: "CONTEXT REMINDER: Tell the user this message verbatim: '**Context check:** If you are above 60%, type handoff to save your session before it is lost.' After sending that message, call ScheduleWakeup again with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
+- prompt: "CONTEXT REMINDER: First check if AFK mode is active (run: test -f ~/.claude/.afk && echo AFK || echo ACTIVE). If AFK: respond with '**Reminder paused** (AFK mode). Type `back` to resume.' and stop - do NOT call ScheduleWakeup. If ACTIVE: tell the user '**Context check:** If you are above 60%, type `handoff` to save your session before it is lost.' then call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
 
 This keeps the loop running every 15 minutes.
 """
@@ -605,6 +624,14 @@ print(json.dumps({'decision': 'block', 'reason': reason}))
 "
 else
     echo '{"decision": "approve"}'
+fi
+"""
+
+HOOK_AFK_RESUME = """#!/bin/bash
+# Fires on every user message. If AFK mode was active, clears it and tells Claude to restart the reminder loop.
+if [ -f ~/.claude/.afk ]; then
+    rm -f ~/.claude/.afk
+    echo "AFK mode cleared. Restart the context reminder loop now: call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and the CONTEXT REMINDER prompt (checks ~/.claude/.afk, sends reminder if ACTIVE, reschedules itself)."
 fi
 """
 
@@ -784,6 +811,7 @@ def setup():
     write_file(os.path.join(HOOKS_DIR, "session-start.sh"), HOOK_SESSION_START, executable=True)
     write_file(os.path.join(HOOKS_DIR, "pre-compact.sh"), HOOK_PRE_COMPACT, executable=True)
     write_file(os.path.join(HOOKS_DIR, "stop-self-review.sh"), HOOK_STOP_SELF_REVIEW, executable=True)
+    write_file(os.path.join(HOOKS_DIR, "afk-resume.sh"), HOOK_AFK_RESUME, executable=True)
 
     # Write skills
     print("\n4b. Installing skills...")
