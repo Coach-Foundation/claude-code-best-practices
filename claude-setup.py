@@ -4,9 +4,8 @@ Claude Code Setup - One-command installer for optimized Claude Code settings.
 
 Detects your OS (Mac/Windows/Linux) and configures:
 - CLAUDE.md with battle-tested instructions for better AI coding
-- settings.json with zero-prompt permissions + token optimization + hooks
-- .claudeignore to prevent scanning large/irrelevant files
-- cc command wrapper (blocks rm -rf and force push)
+- settings.json with zero-prompt permissions + deny-rule guardrails + hooks
+- ccx command wrapper to launch Claude Code in the configured mode
 - Hook scripts for session management and git safety
 - Status line showing context usage and git branch
 
@@ -90,7 +89,7 @@ CLAUDE_MD_BODY = r"""
 - **Sequential Thinking:** For complex problems, debugging, architecture decisions, or multi-step planning, automatically activate sequential thinking MCP.
 - Never ask for permission to search the web. Just do it.
 - **Skills:** Before starting any niche or domain-specific task (marketing, SEO, data analysis, etc.), check if a relevant skill exists and recommend using it if so.
-- **grill-me:** When the user has a plan and is about to implement something non-trivial, if grill-me is not in the available skills list, suggest they install it: create `~/.claude/skills/grill-me/skill.md` or re-run `claude-setup.py`.
+- **grill-me:** When the user has a plan and is about to implement something non-trivial, if grill-me is not in the available skills list, suggest they install it: create `~/.claude/skills/grill-me/SKILL.md` or re-run `claude-setup.py`.
 - **Marketing skills plugin:** When working on any project involving marketing, growth, copywriting, SEO, content strategy, social media, pricing, sales, product positioning, referrals, or any other business/go-to-market work - enable the marketingskills plugin for that project by adding `"marketing-skills@marketingskills": true` to `enabledPlugins` in `.claude/settings.local.json`. Do this automatically at session start without being asked.
 
 ## Open Source First
@@ -157,48 +156,11 @@ introduce violations either.
 - Never delete entries - this file compounds over time
 
 ## Project Documentation
-
-For any project under ~/Documents/dev/: if STATUS.md exists and ROADMAP.md does not, create ROADMAP.md, METRICS.md, and `context/` immediately at session start - before any other work. Do not wait to be asked.
-
-### ROADMAP.md
-Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
-- Now/Next/Later: outcomes, not tasks
-- Risks table: Risk | Likelihood (1-5) | Impact (1-5) | Mitigation - keep to 3-5 risks max
-Update after completing any milestone or shifting direction.
-
-### METRICS.md
-How we measure success. Table: Metric | Baseline | Target | Current | Last Updated.
-Update at each milestone checkpoint.
-
-### EXPERIMENTS.md
-For AI/ML projects and product experiments. Prevents repeating failed experiments.
-Each entry: Date, Hypothesis, Method, Result, Conclusion, Next Step.
-Skip for pure infrastructure/refactoring work.
-
-### context/ directory
-AI-optimized snapshot for fast session restoration. Update after every logical milestone.
-- `context/state.md` - current phase, immediate next action, recent changes, blockers
-- `context/schema.md` - data structures, interfaces, API contracts, environment variables
-- `context/decisions.md` - tactical/operational decisions (tooling, process, config) + one-line reasoning
-- `context/insights.md` - discoveries, gotchas, non-obvious learnings
-
-Note: `context/decisions.md` is for operational decisions. Technology/architecture choices (framework, database, irreversible patterns) belong in `docs/adr/` instead. Do not duplicate entries between the two.
-
-### docs/adr/ (Architecture Decision Records)
-One file per architectural decision: `docs/adr/NNN-title.md`
-Fields: Status, Context, Decision, Consequences, Alternatives Considered.
-Append-only - never edit past ADRs, write a new one to supersede.
-Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
-
-### docs/research/
-Save reference material, papers, and external docs here before reading so they are available next session. Name files: `YYYY-MM-DD-[topic].md`. Keep a one-line description at the top of each file.
+- For any project under ~/Documents/dev/: if STATUS.md exists and ROADMAP.md does not, invoke the project-docs skill immediately at session start - before any other work. The skill defines ROADMAP.md, METRICS.md, EXPERIMENTS.md, context/, docs/adr/, and docs/research/.
+- Update those docs after completing any milestone (templates and rules live in the project-docs skill).
 
 ## Transcriptions
-- When the user provides any audio, video, Zoom call, voice memo, or other recording/transcript, always save it as a file inside the current project directory.
-- Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
-- Create the `docs/transcriptions/` directory if it does not exist.
-- Include metadata at the top: date, source type, participants (if known), topic/title.
-- Do this automatically without being asked.
+- When the user provides any audio, video, call recording, or transcript, invoke the save-transcription skill automatically - it files it under `docs/transcriptions/`.
 
 ## Context Window Monitoring
 - Do NOT auto-trigger handoff warnings. The user monitors context % in the status bar and will type "handoff" when ready.
@@ -209,18 +171,15 @@ Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is giv
 ### When I type "ooc" or "running out of context"
 Context is nearly full. Invoke the handoff skill (Skill tool, skill="handoff") for the current project, then reply with exactly: "Session saved. Open a new Claude Code session in this directory and type `read handoff` to resume."
 
-### When I type "afk"
-Pause the context reminder loop: run `touch ~/.claude/.afk`. Confirm with: "Reminder paused. The loop restarts automatically on your next message."
-
 ### On Every Session Start
 Invoke the startup skill immediately (Skill tool, skill="startup") as your very first action, before responding to anything. The hook will have already loaded SESSION_HANDOFF.md and STATUS.md as context - do not re-read them.
 
 ## Git
 - Run `git status` and `git diff --staged` before every commit.
-- Before committing, scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) and update every one that is stale - do not use a fixed list, check everything that exists.
+- Before committing, scan ALL .md files in the project and update every one that is stale - no fixed list, check everything that exists.
 - After completing a logical unit of work, mention once that it is a good time to commit. Do not repeat.
-- When I say "update github": check the project CLAUDE.md first - some projects define this differently. Otherwise follow these steps in order: (0) if `docs/SESSION_HANDOFF.md` exists, read it - it captures prior session work that must be included; (1) scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) - do not use a fixed list, find everything that exists - then for each file: read its current content, cross-reference against actual session work (git diff + conversation), and make substantive updates (new entries, revised statuses, updated roadmap items, new insights, current metrics) - cosmetic edits or date-only changes are not enough; (2) run `git status` and `git diff --stat HEAD`; (3) commit with a thorough message covering work from both the current and prior session if a handoff existed; (4) `git push origin HEAD`; (5) invoke the handoff skill to write `docs/SESSION_HANDOFF.md`.
-- When I say "deploy": do everything "update github" does first (read handoff, update all docs, commit, push, write handoff), then run the deployment. Use the `deploy` skill for the deployment step unless the project CLAUDE.md defines a project-specific deploy process.
+- When I say "update github": invoke the update-github skill (project CLAUDE.md may override it).
+- When I say "deploy": run the update-github skill first, then run the deployment (project CLAUDE.md may define a project-specific deploy).
 - Enable Dependabot on all new GitHub repos.
 
 ## Deployment
@@ -251,13 +210,8 @@ Every commit must be thorough. Follow this format:
 - Minimize manual work for the user. If you can do it via CLI/API/SSH/scripting, do it.
 
 ## Long-Running Processes
-- Any process expected to take >30 seconds: redirect output with `cmd > output.log 2>&1 &` then immediately tail with `tail -f output.log` or Monitor the log file.
-- Never run a long job silently and wait - failures must surface within the first few output lines, not at the end of a wasted run.
-- After starting: check the log within 60s to confirm it is running correctly. If it has errored or stalled, fix it, restart, and check again after 60s.
-- Only once confirmed healthy do you switch to 5-minute (270s) wakeup checks until the job completes.
-
-## Self-Review Before Claiming Done
-Before saying any task is "done", verify: (1) tests pass, (2) the feature actually works, (3) you did everything asked, (4) no half-modified files remain. If any check fails, fix it before claiming done.
+- Probe first: before any long job (API scan, backtest, remote script, pipeline), run a minimal version (1 record / 2-3 rows / a one-liner) and confirm the output looks right. A 5-second probe prevents a 3-minute failure.
+- Run the full job with output redirected to a log (`cmd > output.log 2>&1 &`), check the log within 60s to confirm it is healthy, then check every ~5 minutes until done. Never run a long job silently.
 
 ## Superpowers
 - Always use superpowers skills wherever applicable. Never skip them because "it's simple."
@@ -280,11 +234,24 @@ Before saying any task is "done", verify: (1) tests pass, (2) the feature actual
 def get_settings():
     settings = {
         "permissions": {
-            "defaultMode": "bypassPermissions"
+            "defaultMode": "bypassPermissions",
+            # Deny rules are enforced even in bypassPermissions mode
+            # (verified live 2026-06-11). They replace the old cc-wrapper
+            # blocklist, which used --disallowedTools and could be shadowed.
+            "deny": [
+                "Bash(rm -rf:*)",
+                "Bash(rm -fr:*)",
+                "Bash(sudo rm:*)",
+                "Bash(git push --force:*)",
+                "Bash(git push -f:*)",
+                "Read(./.env)",
+                "Read(./.env.*)",
+                "Read(**/.env)",
+                "Read(**/.env.*)"
+            ]
         },
         "env": {
             "MAX_THINKING_TOKENS": "10000",
-            "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
             "DISABLE_AUTO_COMPACT": "true"
         },
         "autoCompactWindow": 1000000,
@@ -341,24 +308,15 @@ def get_settings():
                         }
                     ]
                 }
-            ],
-            "UserPromptSubmit": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": os.path.join(HOOKS_DIR, "afk-resume.sh")
-                        }
-                    ]
-                }
             ]
         },
         "statusLine": {
             "type": "command",
-            "command": "npx -y ccstatusline@latest",
+            "command": "npx -y ccstatusline@2",
             "padding": 0
-        },
-        "model": "sonnet"
+        }
+        # No "model" pin: let each user keep their account default. The old
+        # "sonnet" alias form is outdated; use full model IDs if pinning.
     }
     return settings
 
@@ -471,7 +429,7 @@ fi
 # Startup instruction goes in additionalContext - this is what Claude actually reads
 STARTUP_MSG="\\n[SESSION START]"
 [ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
-STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\\"startup\\") to list relevant skills and start the context reminder loop."
+STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\\"startup\\") to load project lessons and list relevant skills."
 CONTEXT="$CONTEXT$STARTUP_MSG"
 
 PYTHON=$(command -v python3 || command -v python) 2>/dev/null
@@ -486,57 +444,102 @@ print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'addit
 
 SKILL_STARTUP = """---
 name: startup
-description: Run at the start of every new session. Lists relevant skills and starts the 15-min context reminder loop.
+description: Run at the start of every new session. Loads project lessons and lists relevant skills.
 ---
 
 # Session Startup
 
-The hook has already handled git repo creation and STATUS.md. Your job here is three things:
+The hook has already handled git repo creation and STATUS.md. Your job here is two things:
 
-## Step 0: Load Project Lessons
+## Step 1: Load Project Lessons
 
 If `tasks/lessons.md` exists in the current project root, read it silently and apply all rules before proceeding.
 
-## Step 1: Relevant Skills
+## Step 2: Relevant Skills
 
 From the available skills list, pick 3-5 most relevant to this project and list them:
 `- skill-name: one line on what it does`
 
-## Step 2: Context Reminder Loop
-
-Clear any leftover AFK flag from a previous session: run `rm -f ~/.claude/.afk`
-
-Call ScheduleWakeup with:
-- delaySeconds: 900
-- reason: "15-min context check reminder"
-- prompt: "CONTEXT REMINDER: First check if AFK mode is active (run: test -f ~/.claude/.afk && echo AFK || echo ACTIVE). If AFK: respond with '**Reminder paused** (AFK mode). Type `afk` again to pause after resuming.' and stop - do NOT call ScheduleWakeup. If ACTIVE: tell the user '**Context check:** If you are above 60%, type `handoff` to save your session before it is lost.' then call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
-
 ## Step 3: Summary
 
-One line: `Session ready | lessons: [loaded N rules / none] | reminder: started`
+One line: `Session ready | lessons: [loaded N rules / none]`
+
+Note: context usage is shown in the status line. If it climbs above ~60%, the user types `handoff` to save the session. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
 """
 
-SKILL_CONTEXT_REMINDER = """---
-name: context-reminder
-description: Recurring 15-min context check reminder. Notifies user to check context percentage, then reschedules itself to keep the loop running.
+SKILL_UPDATE_GITHUB = """---
+name: update-github
+description: Update all project docs substantively, commit, push, and write a session handoff. Use when the user says "update github". For "deploy", run this first, then the deployment.
 ---
 
-# Context Reminder
+# Update GitHub
 
-Check if AFK mode is active (run: `test -f ~/.claude/.afk && echo AFK || echo ACTIVE`).
+If the project CLAUDE.md defines "update github" differently, follow that instead.
 
-If AFK: respond with '**Reminder paused** (AFK mode). Type `back` to resume.' and stop - do NOT call ScheduleWakeup.
+Steps in order:
 
-If ACTIVE: tell the user this message (make it visible, not buried):
+1. If `docs/SESSION_HANDOFF.md` exists, read it first - it captures prior session work that must be reflected in docs and the commit message.
+2. Scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) - do not use a fixed list, find everything that exists. For each file: read its current content, cross-reference against actual session work (git diff + conversation), and make substantive updates (new entries, revised statuses, updated roadmap items, new insights, current metrics). Cosmetic edits or date-only changes are not enough.
+3. Run `git status` and `git diff --stat HEAD` to confirm what changed.
+4. Commit with a thorough message (type(scope): summary, then WHY, then all changes) covering work from both the current and prior session if a handoff existed.
+5. `git push origin HEAD`.
+6. Write `docs/SESSION_HANDOFF.md` capturing: what we were doing, what was completed, current state, open bugs, next steps in order, key files changed, decisions made, warnings.
+"""
 
-> **Context check:** If you're above 60%, type `handoff` to save your session before it's lost.
+SKILL_PROJECT_DOCS = """---
+name: project-docs
+description: Project documentation system - creates and maintains ROADMAP.md, METRICS.md, EXPERIMENTS.md, context/, docs/adr/, docs/research/. Use at session start when STATUS.md exists but ROADMAP.md does not, or whenever creating or structuring project docs.
+---
 
-Then immediately call ScheduleWakeup with:
-- delaySeconds: 900
-- reason: "15-min context check reminder"
-- prompt: "CONTEXT REMINDER: First check if AFK mode is active (run: test -f ~/.claude/.afk && echo AFK || echo ACTIVE). If AFK: respond with '**Reminder paused** (AFK mode). Type `back` to resume.' and stop - do NOT call ScheduleWakeup. If ACTIVE: tell the user '**Context check:** If you are above 60%, type `handoff` to save your session before it is lost.' then call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and this same prompt text to continue the loop."
+# Project Documentation System
 
-This keeps the loop running every 15 minutes.
+If STATUS.md exists and ROADMAP.md does not, create ROADMAP.md, METRICS.md, and `context/` immediately - before any other work.
+
+## ROADMAP.md
+Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
+- Now/Next/Later: outcomes, not tasks
+- Risks table: Risk | Likelihood (1-5) | Impact (1-5) | Mitigation - keep to 3-5 risks max
+Update after completing any milestone or shifting direction.
+
+## METRICS.md
+How we measure success. Table: Metric | Baseline | Target | Current | Last Updated.
+Update at each milestone checkpoint.
+
+## EXPERIMENTS.md
+For AI/ML projects and product experiments. Prevents repeating failed experiments.
+Each entry: Date, Hypothesis, Method, Result, Conclusion, Next Step.
+Skip for pure infrastructure/refactoring work.
+
+## context/ directory
+AI-optimized snapshot for fast session restoration. Update after every logical milestone.
+- `context/state.md` - current phase, immediate next action, recent changes, blockers
+- `context/schema.md` - data structures, interfaces, API contracts, environment variables
+- `context/decisions.md` - tactical/operational decisions (tooling, process, config) + one-line reasoning
+- `context/insights.md` - discoveries, gotchas, non-obvious learnings
+
+Note: `context/decisions.md` is for operational decisions. Technology/architecture choices (framework, database, irreversible patterns) belong in `docs/adr/` instead. Do not duplicate entries between the two.
+
+## docs/adr/ (Architecture Decision Records)
+One file per architectural decision: `docs/adr/NNN-title.md`
+Fields: Status, Context, Decision, Consequences, Alternatives Considered.
+Append-only - never edit past ADRs, write a new one to supersede.
+Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
+
+## docs/research/
+Save reference material, papers, and external docs here before reading so they are available next session. Name files: `YYYY-MM-DD-[topic].md`. Keep a one-line description at the top of each file.
+"""
+
+SKILL_SAVE_TRANSCRIPTION = """---
+name: save-transcription
+description: Save any provided audio, video, Zoom call, voice memo, or other recording/transcript as a file in the current project. Use automatically whenever the user provides a transcript or recording content.
+---
+
+# Save Transcription
+
+- Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
+- Create the `docs/transcriptions/` directory if it does not exist.
+- Include metadata at the top: date, source type, participants (if known), topic/title.
+- Do this automatically without being asked.
 """
 
 SKILL_GRILL_ME = """---
@@ -560,114 +563,79 @@ echo '{"systemMessage":"Context compaction is about to occur. Before compacting,
 """
 
 HOOK_STOP_SELF_REVIEW = """#!/bin/bash
-# Stop hook: only require self-review if code was written or edited this session.
-# For pure Q&A sessions this exits silently (zero token cost).
-
-ARGS="${ARGUMENTS:-{}}"
-
-STOP_HOOK_ACTIVE=$(echo "$ARGS" | python3 -c "
+# Stop hook: require a self-review pass only when code was written or edited
+# since the last real user prompt. Pure Q&A turns stop silently (zero cost).
+# Hook input arrives as JSON on stdin; the transcript at transcript_path is JSONL.
+exec python3 -c '
 import json, sys
+
 try:
     d = json.load(sys.stdin)
-    print(str(d.get('stop_hook_active', False)).lower())
-except:
-    print('false')
-" 2>/dev/null)
+except Exception:
+    sys.exit(0)
 
-if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-    echo '{"decision": "approve"}'
-    exit 0
-fi
+if d.get("stop_hook_active"):
+    sys.exit(0)
 
-TRANSCRIPT_PATH=$(echo "$ARGS" | python3 -c "
-import json, sys
+path = d.get("transcript_path") or ""
+EDIT_TOOLS = ("Write", "Edit", "NotebookEdit")
+edited = False
 try:
-    d = json.load(sys.stdin)
-    print(d.get('transcript_path', ''))
-except:
-    print('')
-" 2>/dev/null)
+    with open(path) as f:
+        for line in f:
+            try:
+                entry = json.loads(line)
+            except Exception:
+                continue
+            message = entry.get("message") or {}
+            content = message.get("content")
+            if entry.get("type") == "user":
+                # A genuine user prompt (string content, or blocks with no
+                # tool_result) resets the flag; tool results do not.
+                if isinstance(content, str):
+                    edited = False
+                elif isinstance(content, list) and not any(
+                    isinstance(b, dict) and b.get("type") == "tool_result" for b in content
+                ):
+                    edited = False
+                continue
+            if not isinstance(content, list):
+                continue
+            if any(
+                isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in EDIT_TOOLS
+                for b in content
+            ):
+                edited = True
+except Exception:
+    sys.exit(0)
 
-if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
-    echo '{"decision": "approve"}'
-    exit 0
-fi
-
-HAS_CODE_CHANGES=$(python3 -c "
-import json, sys
-try:
-    with open(sys.argv[1]) as f:
-        transcript = json.load(f)
-    for msg in transcript.get('messages', []):
-        if msg.get('role') == 'assistant':
-            for block in msg.get('content', []):
-                if isinstance(block, dict) and block.get('type') == 'tool_use':
-                    if block.get('name') in ('Write', 'Edit', 'NotebookEdit'):
-                        print('yes')
-                        sys.exit(0)
-    print('no')
-except:
-    print('no')
-" "$TRANSCRIPT_PATH" 2>/dev/null)
-
-if [ "$HAS_CODE_CHANGES" = "yes" ]; then
-    python3 -c "
-import json
-reason = (
-    'Code was written or modified this session. Before stopping, complete the 3-pass self-review: '
-    '(1) Verification: run the full test suite and confirm all tests pass. '
-    '(2) Adversarial Review: what assumptions did you not verify? How will this fail in production? '
-    '(3) Completeness Check: re-read the original request - did you do everything asked? '
-    'Fix any issues found before claiming done.'
-)
-print(json.dumps({'decision': 'block', 'reason': reason}))
-"
-else
-    echo '{"decision": "approve"}'
-fi
-"""
-
-HOOK_AFK_RESUME = """#!/bin/bash
-# Fires on every user message. If AFK mode was active, clears it and tells Claude to restart the reminder loop.
-if [ -f ~/.claude/.afk ]; then
-    rm -f ~/.claude/.afk
-    echo "AFK mode cleared. Restart the context reminder loop now: call ScheduleWakeup with delaySeconds=900, reason='15-min context check reminder', and the CONTEXT REMINDER prompt (checks ~/.claude/.afk, sends reminder if ACTIVE, reschedules itself)."
-fi
+if edited:
+    reason = (
+        "Code was written or modified this turn. Before stopping, complete the 3-pass self-review: "
+        "(1) Verification: run the relevant tests/checks and confirm they pass. "
+        "(2) Adversarial review: which assumptions did you not verify? How could this fail? "
+        "(3) Completeness: re-read the original request - was everything done? "
+        "Fix any issues found, then stop."
+    )
+    print(json.dumps({"decision": "block", "reason": reason}))
+'
 """
 
 
 # ---------------------------------------------------------------------------
-# cc wrapper script
+# ccx wrapper script
 # ---------------------------------------------------------------------------
+# NOTE: the command is deliberately NOT named "cc" - that shadows the system
+# C compiler (/usr/bin/cc) and breaks native builds. Safety comes from
+# permissions.deny rules in settings.json (enforced even in bypass mode),
+# not from a bypassable --disallowedTools blocklist.
 
-# ---------------------------------------------------------------------------
-# .claudeignore content - prevents scanning large/irrelevant files
-# ---------------------------------------------------------------------------
-
-CLAUDEIGNORE_CONTENT = """node_modules/
-dist/
-build/
-.next/
-*.lock
-__pycache__/
-.git/
-*.db
-*.sqlite
-*.log
-coverage/
-*.min.js
-*.min.css
-vendor/
-.playwright-mcp/
+CCX_SCRIPT_UNIX = """#!/bin/bash
+claude "$@"
 """
 
-
-CC_SCRIPT_UNIX = """#!/bin/bash
-claude --dangerously-skip-permissions --disallowedTools "Bash(rm -rf *)" "Bash(git push --force *)" "Bash(git push -f *)" "$@"
-"""
-
-CC_SCRIPT_WINDOWS = """@echo off
-claude --dangerously-skip-permissions --disallowedTools "Bash(rm -rf *)" "Bash(git push --force *)" "Bash(git push -f *)" %*
+CCX_SCRIPT_WINDOWS = """@echo off
+claude %*
 """
 
 
@@ -712,48 +680,50 @@ def merge_claude_json():
     print(f"  [OK] {claude_json_path} (terminal bell enabled)")
 
 
-def install_cc_wrapper():
-    """Install the cc wrapper command."""
+def remove_legacy_cc():
+    """Remove the old 'cc' wrapper that shadowed the system C compiler."""
+    for legacy in [os.path.join(HOME, ".local", "bin", "cc"),
+                   os.path.join(HOME, "bin", "cc.bat")]:
+        if os.path.exists(legacy):
+            try:
+                with open(legacy) as f:
+                    if "claude" in f.read():
+                        os.remove(legacy)
+                        print(f"  [REMOVED] legacy wrapper {legacy}")
+            except OSError:
+                pass
+    legacy_usr = "/usr/local/bin/cc"
+    if not IS_WINDOWS and os.path.exists(legacy_usr):
+        try:
+            with open(legacy_usr) as f:
+                if "claude" in f.read():
+                    print(f"  [!] Old wrapper at {legacy_usr} shadows the C compiler.")
+                    print(f"      Remove it with: sudo rm {legacy_usr}")
+        except OSError:
+            pass
+
+
+def install_ccx_wrapper():
+    """Install the ccx wrapper command (user-local, no sudo, no name collision)."""
     if IS_WINDOWS:
-        cc_dir = os.path.join(HOME, "bin")
-        cc_path = os.path.join(cc_dir, "cc.bat")
-        os.makedirs(cc_dir, exist_ok=True)
-        write_file(cc_path, CC_SCRIPT_WINDOWS)
-        # Check if ~/bin is in PATH
+        ccx_dir = os.path.join(HOME, "bin")
+        ccx_path = os.path.join(ccx_dir, "ccx.bat")
+        os.makedirs(ccx_dir, exist_ok=True)
+        write_file(ccx_path, CCX_SCRIPT_WINDOWS)
         path_dirs = os.environ.get("PATH", "").split(os.pathsep)
-        if cc_dir not in path_dirs:
-            print(f"\n  NOTE: Add {cc_dir} to your system PATH:")
+        if ccx_dir not in path_dirs:
+            print(f"\n  NOTE: Add {ccx_dir} to your system PATH:")
             print(f"  1. Search 'Environment Variables' in Windows Settings")
-            print(f"  2. Edit PATH, add: {cc_dir}")
+            print(f"  2. Edit PATH, add: {ccx_dir}")
             print(f"  3. Restart your terminal")
     else:
-        cc_path = "/usr/local/bin/cc"
-        try:
-            os.makedirs("/usr/local/bin", exist_ok=True)
-            write_file(cc_path, CC_SCRIPT_UNIX, executable=True)
-        except PermissionError:
-            print("  [!] Need sudo to install cc to /usr/local/bin")
-            try:
-                subprocess.run(
-                    ["sudo", "mkdir", "-p", "/usr/local/bin"],
-                    check=True
-                )
-                # Write via sudo
-                proc = subprocess.run(
-                    ["sudo", "tee", cc_path],
-                    input=CC_SCRIPT_UNIX.encode(),
-                    stdout=subprocess.DEVNULL,
-                    check=True
-                )
-                subprocess.run(["sudo", "chmod", "+x", cc_path], check=True)
-                print(f"  [OK] {cc_path}")
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                # Fallback: install to ~/.local/bin
-                fallback = os.path.join(HOME, ".local", "bin", "cc")
-                os.makedirs(os.path.dirname(fallback), exist_ok=True)
-                write_file(fallback, CC_SCRIPT_UNIX, executable=True)
-                print(f"  [FALLBACK] Installed to {fallback}")
-                print(f"  Add {os.path.dirname(fallback)} to your PATH if not already there")
+        ccx_path = os.path.join(HOME, ".local", "bin", "ccx")
+        os.makedirs(os.path.dirname(ccx_path), exist_ok=True)
+        write_file(ccx_path, CCX_SCRIPT_UNIX, executable=True)
+        path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+        if os.path.dirname(ccx_path) not in path_dirs:
+            print(f"  NOTE: Add {os.path.dirname(ccx_path)} to your PATH, e.g.:")
+            print(f"  echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc")
 
 
 def trigger_mac_notification():
@@ -811,22 +781,38 @@ def setup():
     write_file(os.path.join(HOOKS_DIR, "session-start.sh"), HOOK_SESSION_START, executable=True)
     write_file(os.path.join(HOOKS_DIR, "pre-compact.sh"), HOOK_PRE_COMPACT, executable=True)
     write_file(os.path.join(HOOKS_DIR, "stop-self-review.sh"), HOOK_STOP_SELF_REVIEW, executable=True)
-    write_file(os.path.join(HOOKS_DIR, "afk-resume.sh"), HOOK_AFK_RESUME, executable=True)
+
+    # Remove retired afk/context-reminder machinery from previous versions.
+    # The 15-min reminder loop was a token sink: each wakeup re-read the whole
+    # conversation at cold-cache prices. The status line shows context % instead.
+    legacy_afk = os.path.join(HOOKS_DIR, "afk-resume.sh")
+    if os.path.exists(legacy_afk):
+        os.remove(legacy_afk)
+        print("  [REMOVED] afk-resume.sh (reminder loop retired)")
 
     # Write skills
     print("\n4b. Installing skills...")
     SKILLS_DIR = os.path.join(CLAUDE_DIR, "skills")
     startup_dir = os.path.join(SKILLS_DIR, "startup")
-    context_reminder_dir = os.path.join(SKILLS_DIR, "context-reminder")
     os.makedirs(startup_dir, exist_ok=True)
-    os.makedirs(context_reminder_dir, exist_ok=True)
     write_file(os.path.join(startup_dir, "SKILL.md"), SKILL_STARTUP)
-    write_file(os.path.join(context_reminder_dir, "SKILL.md"), SKILL_CONTEXT_REMINDER)
+    for skill_name, skill_content in [
+        ("update-github", SKILL_UPDATE_GITHUB),
+        ("project-docs", SKILL_PROJECT_DOCS),
+        ("save-transcription", SKILL_SAVE_TRANSCRIPTION),
+    ]:
+        skill_dir = os.path.join(SKILLS_DIR, skill_name)
+        os.makedirs(skill_dir, exist_ok=True)
+        write_file(os.path.join(skill_dir, "SKILL.md"), skill_content)
+    legacy_reminder = os.path.join(SKILLS_DIR, "context-reminder")
+    if os.path.isdir(legacy_reminder):
+        shutil.rmtree(legacy_reminder)
+        print("  [REMOVED] context-reminder skill (reminder loop retired)")
 
     # Optional: grill-me skill
     grill_me_dir = os.path.join(SKILLS_DIR, "grill-me")
-    grill_me_path = os.path.join(grill_me_dir, "skill.md")
-    if os.path.exists(grill_me_path):
+    grill_me_path = os.path.join(grill_me_dir, "SKILL.md")
+    if os.path.exists(grill_me_path) or os.path.exists(os.path.join(grill_me_dir, "skill.md")):
         print("  [SKIP] grill-me skill already installed")
     else:
         answer = input("\n  Install grill-me skill? Stress-tests plans before implementation (recommended) [Y/n]: ").strip().lower()
@@ -837,21 +823,21 @@ def setup():
         else:
             print("  [SKIP] grill-me skill skipped")
 
-    # Install .claudeignore (per-project template in home dir)
-    print("\n5. Installing .claudeignore template...")
+    # Remove the dead .claudeignore (not a Claude Code feature; replaced by
+    # permissions.deny Read rules in settings.json)
     claudeignore_path = os.path.join(HOME, ".claudeignore")
-    if not os.path.exists(claudeignore_path):
-        write_file(claudeignore_path, CLAUDEIGNORE_CONTENT)
-    else:
-        print(f"  [SKIP] {claudeignore_path} already exists")
+    if os.path.exists(claudeignore_path):
+        os.remove(claudeignore_path)
+        print(f"\n  [REMOVED] {claudeignore_path} (.claudeignore is not a Claude Code feature)")
 
     # Merge terminal bell setting
-    print("\n6. Configuring notifications...")
+    print("\n5. Configuring notifications...")
     merge_claude_json()
 
-    # Install cc wrapper
-    print("\n7. Installing cc command...")
-    install_cc_wrapper()
+    # Install ccx wrapper (and clean up the old cc one)
+    print("\n6. Installing ccx command...")
+    remove_legacy_cc()
+    install_ccx_wrapper()
 
     # Trigger notification (Mac only)
     trigger_mac_notification()
@@ -864,20 +850,17 @@ def setup():
     print(f"\nPlatform:       {plat_name}")
     print(f"CLAUDE.md:      {os.path.join(CLAUDE_DIR, 'CLAUDE.md')}")
     print(f"settings.json:  {os.path.join(CLAUDE_DIR, 'settings.json')}")
-    print(f".claudeignore:  {claudeignore_path}")
     print(f"Hooks:          {HOOKS_DIR}")
 
     print("\n--- Token optimization (auto-configured) ---")
-    print("  MAX_THINKING_TOKENS=10000    (70% thinking token reduction)")
-    print("  Subagent model: haiku        (80% cheaper subagents)")
-    print("  Effort level: medium         (50-70% fewer output tokens)")
-    print("  Auto-compact: 75%            (earlier compaction, more buffer)")
-    print("  .claudeignore installed       (prevents scanning junk files)")
+    print("  MAX_THINKING_TOKENS=10000     (caps the extended-thinking budget)")
+    print("  DISABLE_AUTO_COMPACT=true     (prefer session handoff files over autocompact)")
+    print("  Stop hook                      (self-review pass when code was edited)")
 
     print("\n--- How to use ---")
-    print("  cc              Start Claude Code (zero prompts, safe)")
-    print("  cc --resume     Resume your last session")
-    print("  claude          Start with default prompts (if you ever want them back)")
+    print("  ccx             Start Claude Code (zero prompts, deny-rule guardrails)")
+    print("  ccx --resume    Resume your last session")
+    print("  claude          Same thing (settings.json sets the permission mode)")
 
     print("\n--- Recommended plugins (run inside a cc session) ---")
     print('  Type: /install-plugin superpowers      (structured workflows)')
@@ -897,10 +880,11 @@ def setup():
         print("  For richer notifications, install BurntToast:")
         print("  powershell: Install-Module -Name BurntToast")
 
-    print("\n--- What cc blocks (safety) ---")
-    print("  rm -rf           (recursive directory deletion)")
-    print("  git push --force (overwriting remote git history)")
-    print("  git push -f      (same as above)")
+    print("\n--- Safety guardrails (permissions.deny in settings.json) ---")
+    print("  rm -rf / rm -fr / sudo rm   (recursive deletion)")
+    print("  git push --force / -f       (overwriting remote history)")
+    print("  Read .env / .env.*          (secrets stay out of context)")
+    print("  These bind even in bypassPermissions mode (verified live).")
     print("  Everything else runs without prompts.\n")
 
 
