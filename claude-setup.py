@@ -207,6 +207,7 @@ Every commit must be thorough. Follow this format:
 ## Parallelism
 - Always run long tasks in the background using `run_in_background`.
 - Use subagents for 2+ independent tasks. Never do sequentially what can be done concurrently.
+- Subagents do not inherit conversation context. Every delegation must name exact files/paths, the goal or error state, and the expected output.
 - Minimize manual work for the user. If you can do it via CLI/API/SSH/scripting, do it.
 
 ## Long-Running Processes
