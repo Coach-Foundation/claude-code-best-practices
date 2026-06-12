@@ -1,0 +1,8 @@
+{
+  "name": "ap-optimal-claude",
+  "description": "Optimized Claude Code workflow kit: session startup + handoff system, project documentation skills, outcome-grading loops, spec/fix/prd workflows, and specialist agents (architect, code-verifier, mechanic). Pair with the claude-setup.py bootstrapper for hooks, permission guardrails, and the ccx launcher.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Foundation"
+  }
+}

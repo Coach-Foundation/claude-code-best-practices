@@ -166,7 +166,7 @@ introduce violations either.
 - Do NOT auto-trigger handoff warnings. The user monitors context % in the status bar and will type "handoff" when ready.
 
 ### When I type "handoff" or "handoff <project>"
-Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is given (e.g. "handoff my-project", "handoff other-project" - any folder under ~/Documents/dev/), the skill writes to `~/Documents/dev/<project>/docs/SESSION_HANDOFF.md` using git state from that directory. If no project name, writes to the current project. Pasting the last ~50 lines of a filled-up session helps capture mid-debug state, but is not required - the skill can reconstruct from git diff + log alone.
+Invoke the handoff skill (Skill tool, skill="handoff"). If a project name is given (e.g. "handoff my-app" - any folder under ~/Documents/dev/), the skill writes to `~/Documents/dev/<project>/docs/SESSION_HANDOFF.md` using git state from that directory. If no project name, writes to the current project. Pasting the last ~50 lines of a filled-up session helps capture mid-debug state, but is not required - the skill can reconstruct from git diff + log alone.
 
 ### When I type "ooc" or "running out of context"
 Context is nearly full. Invoke the handoff skill (Skill tool, skill="handoff") for the current project, then reply with exactly: "Session saved. Open a new Claude Code session in this directory and type `read handoff` to resume."

@@ -1,0 +1,13 @@
+{
+  "name": "coach-foundation",
+  "owner": {
+    "name": "Coach Foundation"
+  },
+  "plugins": [
+    {
+      "name": "ap-optimal-claude",
+      "source": "./plugins/ap-optimal-claude",
+      "description": "Optimized Claude Code workflow kit: session startup + handoff system, project documentation skills, outcome-grading loops, spec/fix/prd workflows, and specialist agents (architect, code-verifier, mechanic)."
+    }
+  ]
+}
