@@ -223,6 +223,14 @@ Every commit must be thorough. Follow this format:
 - Never make assumptions about account balances, API limits, send volumes, or resource constraints. Always ask or read from config/env.
 - When presenting data/metrics, cross-verify against raw source data. Do not interpolate or estimate. Show exact raw data supporting each number.
 
+## Project Boundaries
+- Never modify or delete files inside another project's repo from the current session - a "helpful" cross-project edit can silently break that project. If work is needed there, write a paste-ready prompt for that project's own Claude instance and hand it to me. Reading other projects for context stays fine.
+
+## Machine Resources (Mac + VM)
+- CPU: processes you spawn must stay under ~25% of the Mac's processing power unless I explicitly allow more for a specific task. Throttle parallelism accordingly (worker counts, parallel jobs, make -j, concurrent subprocesses).
+- Storage: before creating anything that grows over time (datasets, caches, logs, downloaded models, build artifacts), state the expected size and growth. Flag anything likely to exceed ~1GB before writing it.
+- If a project directory, ~/.claude (projects/, transcripts, caches), or the VM looks bloated during normal work, surface it with a concrete plan: back up to the right remote (GitHub, dotenv repo, cloud storage) first, then clean up locally. Never delete unbacked data without asking.
+
 ## Phase Checkpoints
 - Before starting each new phase of a multi-step task, run a full checkpoint: tests, clean git, 3-line status summary. Do not proceed until green.
 """
