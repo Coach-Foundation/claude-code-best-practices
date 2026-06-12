@@ -823,7 +823,11 @@ def setup():
     if os.path.exists(grill_me_path) or os.path.exists(os.path.join(grill_me_dir, "skill.md")):
         print("  [SKIP] grill-me skill already installed")
     else:
-        answer = input("\n  Install grill-me skill? Stress-tests plans before implementation (recommended) [Y/n]: ").strip().lower()
+        try:
+            answer = input("\n  Install grill-me skill? Stress-tests plans before implementation (recommended) [Y/n]: ").strip().lower()
+        except EOFError:
+            # Non-interactive run (e.g. Claude executing the installer): default to yes
+            answer = ""
         if answer in ("", "y", "yes"):
             os.makedirs(grill_me_dir, exist_ok=True)
             write_file(grill_me_path, SKILL_GRILL_ME)
