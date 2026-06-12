@@ -46,7 +46,7 @@ The installer replaces CLAUDE.md and settings.json (timestamped backups are made
 You'll keep everything you like and gain the verification hooks, guardrails, and session memory. If something feels wrong, your backups are in `~/.claude/` with timestamps and the plugin uninstalls in one command.
 
 **Windows?**
-Run `python claude-setup.py` instead. If notifications matter to you, see the BurntToast note the installer prints.
+Run `python claude-setup.py` instead. Everything works (plugin skills, agents, guardrails, settings) EXCEPT the four hook scripts, which are bash - they need WSL or Git Bash to fire. If you're on plain Windows you still get the full plugin + guardrails; the automatic session-context loading and stop-time self-review just won't run. Native Windows hook support is planned for plugin v1.1.
 
 **Something broke / question?**
 Post in the Slack thread. Known quirk: if `ccx` is not found after install, add `~/.local/bin` to your PATH (the installer prints the exact line).
