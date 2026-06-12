@@ -247,9 +247,19 @@ def get_settings():
                 "Read(./.env)",
                 "Read(./.env.*)",
                 "Read(**/.env)",
-                "Read(**/.env.*)"
+                "Read(**/.env.*)",
+                # Credential paths (Trail of Bits hardening pattern)
+                "Read(~/.ssh/**)",
+                "Read(~/.aws/**)",
+                "Read(~/.kube/**)",
+                "Read(~/.gnupg/**)",
+                "Read(~/.npmrc)",
+                "Read(~/.pypirc)"
             ]
         },
+        # A compromised cloned repo could ship malicious MCP servers via its
+        # .mcp.json - require explicit opt-in per project instead.
+        "enableAllProjectMcpServers": False,
         "env": {
             "MAX_THINKING_TOKENS": "10000",
             "DISABLE_AUTO_COMPACT": "true"
