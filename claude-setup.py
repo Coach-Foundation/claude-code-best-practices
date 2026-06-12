@@ -441,9 +441,24 @@ if [[ "$CWD" == "$HOME_DEV"/* ]] && [ ! -f STATUS.md ]; then
 STATUSMD
 fi
 
-# Load context files
+# Load context files (skip the handoff once newer commits exist - STATUS.md and
+# context/ carry the current state by then, and a stale handoff wastes ~5KB of
+# context every session)
 if [ -f docs/SESSION_HANDOFF.md ]; then
-    CONTEXT="$CONTEXT\\n=== SESSION_HANDOFF.md ===\\n$(cat docs/SESSION_HANDOFF.md)"
+    HANDOFF_FRESH=1
+    if git rev-parse --git-dir > /dev/null 2>&1; then
+        HEAD_TIME=$(git log -1 --format=%ct 2>/dev/null || echo 0)
+        HANDOFF_COMMIT_TIME=$(git log -1 --format=%ct -- docs/SESSION_HANDOFF.md 2>/dev/null || echo 0)
+        HANDOFF_MTIME=$(stat -f %m docs/SESSION_HANDOFF.md 2>/dev/null || stat -c %Y docs/SESSION_HANDOFF.md 2>/dev/null || echo 0)
+        if [ "$HANDOFF_MTIME" -lt "$HEAD_TIME" ] && [ "$HANDOFF_COMMIT_TIME" -lt "$HEAD_TIME" ]; then
+            HANDOFF_FRESH=0
+        fi
+    fi
+    if [ "$HANDOFF_FRESH" -eq 1 ]; then
+        CONTEXT="$CONTEXT\\n=== SESSION_HANDOFF.md ===\\n$(cat docs/SESSION_HANDOFF.md)"
+    else
+        CONTEXT="$CONTEXT\\n(docs/SESSION_HANDOFF.md exists but predates newer commits - skipped as stale; STATUS.md and context/ below are current)"
+    fi
 fi
 
 if [ -f STATUS.md ]; then
