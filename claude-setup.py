@@ -748,20 +748,6 @@ def install_ccx_wrapper():
             print(f"  echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc")
 
 
-def trigger_mac_notification():
-    """Trigger a test notification so Script Editor appears in notification settings."""
-    if IS_MAC:
-        try:
-            subprocess.run(
-                ["osascript", "-e",
-                 'display notification "Setup complete!" '
-                 'with title "Claude Code" sound name "Hero"'],
-                capture_output=True, timeout=5
-            )
-        except Exception:
-            pass
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -861,9 +847,6 @@ def setup():
     remove_legacy_cc()
     install_ccx_wrapper()
 
-    # Trigger notification (Mac only)
-    trigger_mac_notification()
-
     # Done
     print("\n" + "=" * 50)
     print("Setup complete!")
@@ -890,12 +873,9 @@ def setup():
     print('  Type: /install-plugin code-simplifier   (code quality reviews)')
 
     if IS_MAC:
-        print("\n--- Mac notification setup ---")
-        print("  1. Open System Settings -> Notifications")
-        print("  2. Find 'Script Editor' in the list")
-        print("  3. Set Alert Style to 'Persistent'")
-        print("  4. Make sure 'Play sound for notifications' is ON")
-        print("  You should have heard a test sound just now.")
+        print("\n--- Mac notifications ---")
+        print("  When Claude needs attention you get a chime + the Terminal dock badge.")
+        print("  No floating banners are used.")
 
     if IS_WINDOWS:
         print("\n--- Windows notification setup ---")
