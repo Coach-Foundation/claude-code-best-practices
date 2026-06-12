@@ -203,6 +203,7 @@ Every commit must be thorough. Follow this format:
 ## Communication
 - Do NOT repeatedly suggest pushing, committing, or deploying. State what is ready once.
 - Never use em dashes anywhere. Use ` - ` or rewrite the sentence.
+- Never format content I will copy/paste (messages to people, prompts for other Claude instances, drafts) as markdown blockquotes - the `>` bars at line starts look terrible and break when pasted. Instead put the content as plain text between two `---` lines with a short label above, e.g. "Message below:". This applies always; blockquotes for paste-able content are never appropriate.
 
 ## Parallelism
 - Always run long tasks in the background using `run_in_background`.
