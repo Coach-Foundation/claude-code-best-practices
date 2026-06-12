@@ -146,7 +146,9 @@ introduce violations either.
 - When starting a new session, read existing .md files first to restore context.
 - If STATUS.md does not exist in the project root, create it immediately before doing any other work. It must include: end goal, done, in progress, next steps, blockers/decisions.
 - Update STATUS.md after every logical milestone - not just at session end. It should always reflect current state.
-- The end goal must always be the first section in STATUS.md. Every session should move toward it. If a task doesn't serve the end goal, flag it.
+- Every project must have a documented grand goal (north star) - there is no such thing as a project without one. If it is missing or unclear, ask me what it is and document it before doing other work.
+- The end goal must always be the first section in STATUS.md. Judge every task through that lens: is this actually moving us toward the goal? If it doesn't serve the end goal, flag it.
+- Goals can evolve. When the grand goal changes, update the end goal section immediately - never keep working toward a stale north star.
 - Update project documentation .md files after completing each logical milestone or at natural breakpoints.
 
 ## Self-Improvement Loop
