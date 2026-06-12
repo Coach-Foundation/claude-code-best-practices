@@ -473,7 +473,7 @@ if [ -f context/schema.md ]; then
     CONTEXT="$CONTEXT\\n=== context/schema.md ===\\n$(cat context/schema.md)"
 fi
 
-# Startup instruction goes in additionalContext - this is what Claude actually reads
+# Append instruction Claude will actually see (additionalContext, not systemMessage)
 STARTUP_MSG="\\n[SESSION START]"
 [ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
 STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\\"startup\\") to load project lessons and list relevant skills."
