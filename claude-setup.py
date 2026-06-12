@@ -752,6 +752,33 @@ def install_ccx_wrapper():
 # Main
 # ---------------------------------------------------------------------------
 
+def install_team_plugin():
+    """Register the team marketplace and install ap-optimal-claude via the claude CLI."""
+    claude_bin = shutil.which("claude")
+    if not claude_bin:
+        print("  [SKIP] claude CLI not found on PATH. Install the plugin later inside Claude Code:")
+        print("         /plugin marketplace add Coach-Foundation/claude-code-best-practices")
+        print("         /plugin install ap-optimal-claude@coach-foundation")
+        return
+    steps = [
+        (["plugin", "marketplace", "add", "Coach-Foundation/claude-code-best-practices"],
+         "marketplace coach-foundation"),
+        (["plugin", "install", "ap-optimal-claude@coach-foundation"],
+         "plugin ap-optimal-claude"),
+    ]
+    for args, label in steps:
+        try:
+            r = subprocess.run([claude_bin] + args, capture_output=True, text=True, timeout=180)
+            out = (r.stdout or r.stderr or "").strip()
+            tail = out.splitlines()[-1] if out else "done"
+            print(f"  [{'OK' if r.returncode == 0 else '!'}] {label}: {tail}")
+            if r.returncode != 0:
+                print("      If this keeps failing, run inside Claude Code: /plugin install ap-optimal-claude@coach-foundation")
+        except Exception as exc:
+            print(f"  [!] {label} failed ({exc})")
+            print("      Run inside Claude Code: /plugin install ap-optimal-claude@coach-foundation")
+
+
 def setup():
     plat_name = "Mac" if IS_MAC else "Windows" if IS_WINDOWS else "Linux"
     print(f"\nClaude Code Setup - {plat_name}")
@@ -850,6 +877,10 @@ def setup():
     print("\n6. Installing ccx command...")
     remove_legacy_cc()
     install_ccx_wrapper()
+
+    # Install the team plugin (marketplace + ap-optimal-claude) - no typed commands needed
+    print("\n7. Installing the ap-optimal-claude team plugin...")
+    install_team_plugin()
 
     # Done
     print("\n" + "=" * 50)

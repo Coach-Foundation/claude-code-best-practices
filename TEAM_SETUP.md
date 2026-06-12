@@ -11,31 +11,45 @@ Everything here was audited against official Anthropic docs and stress-tested by
 - **Your sessions survive.** Handoff files capture state before you run out of context. Open a new session, type `read handoff`, continue where you left off.
 - **Structured workflows on demand.** Type "grade this" for rubric-based quality loops, "grill me" to stress-test a plan, "update github" for docs + commit + push + handoff in one command. Plus specialist agents (architect, code-verifier, mechanic) with the right model pre-picked for each job.
 
-## Setup (do these in order)
+## Setup - the easy way (no terminal needed)
 
-**Prerequisites:** Claude Code installed, Python 3.
+**Step 1:** Open Claude Code and paste this whole block as a message:
 
-**Step 1 - Run the bootstrapper** (terminal):
+```
+Set up my computer with our team's Claude Code configuration. Do this for me:
+
+1. Download the team setup from https://github.com/Coach-Foundation/claude-code-best-practices.git
+   into a temporary folder and run claude-setup.py with Python (python3 on Mac,
+   python on Windows). It backs up my existing settings automatically and
+   installs our team plugin (ap-optimal-claude) by itself. When it finishes,
+   give me a one-line summary in plain language.
+
+2. Test the safety net: try to run the command rm -rf /tmp/guardrail-test and
+   confirm it gets BLOCKED. Tell me PASS or FAIL in simple words.
+
+3. Then remind me to close and reopen Claude Code so everything loads fresh.
+
+If anything goes wrong, explain it to me simply and tell me exactly what to
+post in the team Slack thread.
+```
+
+**Step 2:** When Claude says **PASS**, close and reopen Claude Code, then react with a checkmark on the Slack message. Done - you never touch a terminal.
+
+<details>
+<summary>Prefer doing it yourself in the terminal? (technical path)</summary>
+
 ```bash
 git clone https://github.com/Coach-Foundation/claude-code-best-practices.git
 cd claude-code-best-practices
-python3 claude-setup.py
+python3 claude-setup.py    # python claude-setup.py on Windows
 ```
-This installs the optimized CLAUDE.md, settings (permissions + guardrails + hooks), and the `ccx` launcher. Your existing CLAUDE.md and settings.json are backed up with timestamps first - nothing is lost.
-
-**Step 2 - Install the plugin** (inside a Claude Code session - start one with `ccx` or `claude`):
+The installer registers the team plugin marketplace and installs ap-optimal-claude automatically (via the claude CLI). If that step is skipped because `claude` is not on PATH, run inside a session:
 ```
 /plugin marketplace add Coach-Foundation/claude-code-best-practices
 /plugin install ap-optimal-claude@coach-foundation
 ```
-This adds the 13 workflow skills and 3 specialist agents. It touches nothing else in your config, and updates arrive through the plugin manager - you never re-run the installer.
-
-**Step 3 - Verify (30 seconds):**
-1. Restart Claude Code. You should see a session-start summary line.
-2. Type `/plugin` - ap-optimal-claude should show as installed.
-3. Ask Claude: "run this: rm -rf /tmp/guardrail-test" - it should be **blocked** by a permission rule. That's the guardrails working.
-
-Done - react with a checkmark on the Slack message.
+Verify: restart, `/plugin` shows ap-optimal-claude installed, and asking Claude to run `rm -rf /tmp/guardrail-test` gets blocked. Your previous CLAUDE.md and settings.json are backed up with timestamps before anything is replaced.
+</details>
 
 ## FAQ
 
