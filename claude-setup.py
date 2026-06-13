@@ -441,6 +441,125 @@ def get_notification_hook():
 
 
 # ---------------------------------------------------------------------------
+# Skill file contents (installed into ~/.claude/skills/ by setup())
+# ---------------------------------------------------------------------------
+
+SKILL_STARTUP = """---
+name: startup
+description: Run at the start of every new session. Loads project lessons and lists relevant skills.
+---
+
+# Session Startup
+
+The hook has already handled git repo creation and STATUS.md. Your job here is two things:
+
+## Step 1: Load Project Lessons
+
+If `tasks/lessons.md` exists in the current project root, read it silently and apply all rules before proceeding.
+
+## Step 2: Relevant Skills
+
+From the available skills list, pick 3-5 most relevant to this project and list them:
+`- skill-name: one line on what it does`
+
+## Step 3: Summary
+
+One line: `Session ready | lessons: [loaded N rules / none]`
+
+Note: context usage is shown in the status line. If it climbs above ~60%, the user types `handoff` to save the session. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
+"""
+
+SKILL_UPDATE_GITHUB = """---
+name: update-github
+description: Update all project docs substantively, commit, push, and write a session handoff. Use when the user says "update github". For "deploy", run this first, then the deployment.
+---
+
+# Update GitHub
+
+If the project CLAUDE.md defines "update github" differently, follow that instead.
+
+Steps in order:
+
+1. If `docs/SESSION_HANDOFF.md` exists, read it first - it captures prior session work that must be reflected in docs and the commit message.
+2. Scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) - do not use a fixed list, find everything that exists. For each file: read its current content, cross-reference against actual session work (git diff + conversation), and make substantive updates (new entries, revised statuses, updated roadmap items, new insights, current metrics). Cosmetic edits or date-only changes are not enough.
+3. Run `git status` and `git diff --stat HEAD` to confirm what changed.
+4. Commit with a thorough message (type(scope): summary, then WHY, then all changes) covering work from both the current and prior session if a handoff existed.
+5. `git push origin HEAD`.
+6. Write `docs/SESSION_HANDOFF.md` capturing: what we were doing, what was completed, current state, open bugs, next steps in order, key files changed, decisions made, warnings.
+"""
+
+SKILL_PROJECT_DOCS = """---
+name: project-docs
+description: Project documentation system - creates and maintains ROADMAP.md, METRICS.md, EXPERIMENTS.md, context/, docs/adr/, docs/research/. Use at session start when STATUS.md exists but ROADMAP.md does not, or whenever creating or structuring project docs.
+---
+
+# Project Documentation System
+
+If STATUS.md exists and ROADMAP.md does not, create ROADMAP.md, METRICS.md, and `context/` immediately - before any other work.
+
+## ROADMAP.md
+Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
+- Now/Next/Later: outcomes, not tasks
+- Risks table: Risk | Likelihood (1-5) | Impact (1-5) | Mitigation - keep to 3-5 risks max
+Update after completing any milestone or shifting direction.
+
+## METRICS.md
+How we measure success. Table: Metric | Baseline | Target | Current | Last Updated.
+Update at each milestone checkpoint.
+
+## EXPERIMENTS.md
+For AI/ML projects and product experiments. Prevents repeating failed experiments.
+Each entry: Date, Hypothesis, Method, Result, Conclusion, Next Step.
+Skip for pure infrastructure/refactoring work.
+
+## context/ directory
+AI-optimized snapshot for fast session restoration. Update after every logical milestone.
+- `context/state.md` - current phase, immediate next action, recent changes, blockers
+- `context/schema.md` - data structures, interfaces, API contracts, environment variables
+- `context/decisions.md` - tactical/operational decisions (tooling, process, config) + one-line reasoning
+- `context/insights.md` - discoveries, gotchas, non-obvious learnings
+
+Note: `context/decisions.md` is for operational decisions. Technology/architecture choices (framework, database, irreversible patterns) belong in `docs/adr/` instead. Do not duplicate entries between the two.
+
+## docs/adr/ (Architecture Decision Records)
+One file per architectural decision: `docs/adr/NNN-title.md`
+Fields: Status, Context, Decision, Consequences, Alternatives Considered.
+Append-only - never edit past ADRs, write a new one to supersede.
+Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
+
+## docs/research/
+Save reference material, papers, and external docs here before reading so they are available next session. Name files: `YYYY-MM-DD-[topic].md`. Keep a one-line description at the top of each file.
+"""
+
+SKILL_SAVE_TRANSCRIPTION = """---
+name: save-transcription
+description: Save any provided audio, video, Zoom call, voice memo, or other recording/transcript as a file in the current project. Use automatically whenever the user provides a transcript or recording content.
+---
+
+# Save Transcription
+
+- Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
+- Create the `docs/transcriptions/` directory if it does not exist.
+- Include metadata at the top: date, source type, participants (if known), topic/title.
+- Do this automatically without being asked.
+"""
+
+SKILL_GRILL_ME = """---
+name: grill-me
+description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
+---
+
+Interview me relentlessly about every aspect of this plan until
+we reach a shared understanding. Walk down each branch of the design
+tree resolving dependencies between decisions one by one.
+
+If a question can be answered by exploring the codebase, explore
+the codebase instead.
+
+For each question, provide your recommended answer.
+"""
+
+# ---------------------------------------------------------------------------
 # ccx wrapper script
 # ---------------------------------------------------------------------------
 # NOTE: the command is deliberately NOT named "cc" - that shadows the system
