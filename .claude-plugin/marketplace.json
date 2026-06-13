@@ -7,7 +7,7 @@
     {
       "name": "ap-optimal-claude",
       "source": "./plugins/ap-optimal-claude",
-      "description": "Optimized Claude Code workflow kit: session startup + handoff system, project documentation skills, outcome-grading loops, spec/fix/prd workflows, and specialist agents (architect, code-verifier, mechanic)."
+      "description": "Optimized Claude Code workflow kit: auto-updating hooks (session-context loading, self-review on stop, pre-commit status, pre-compact handoff), session startup + handoff system, project documentation skills, outcome-grading loops, spec/fix/prd workflows, and specialist agents (architect, code-verifier, mechanic)."
     }
   ]
 }

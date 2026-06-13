@@ -277,57 +277,33 @@ def get_settings():
             "DISABLE_AUTO_COMPACT": "true"
         },
         "autoCompactWindow": 1000000,
+        # Pre-declare the team marketplace with auto-update ON and the plugin
+        # enabled, so a single installer run wires up continuous updates: skills,
+        # agents, and hooks (which now live in the plugin) flow to the user on
+        # every restart with zero further action. The CLI install step below is
+        # a belt-and-suspenders fallback for older clients.
+        "extraKnownMarketplaces": {
+            "coach-foundation": {
+                "source": {
+                    "source": "github",
+                    "repo": "Coach-Foundation/claude-code-best-practices"
+                },
+                "autoUpdate": True
+            }
+        },
+        "enabledPlugins": {
+            "ap-optimal-claude@coach-foundation": True
+        },
+        # Only the Notification hook stays here: its Windows variant is a direct
+        # powershell command that fires without bash, so it cannot move into the
+        # (bash-script) plugin without regressing native Windows. The other four
+        # hooks now ship in the ap-optimal-claude plugin (hooks/hooks.json) so
+        # they auto-update with the rest of the kit.
         "hooks": {
             "Notification": [
                 {
                     "hooks": [
                         get_notification_hook()
-                    ]
-                }
-            ],
-            "PreToolUse": [
-                {
-                    "matcher": "Bash",
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": os.path.join(HOOKS_DIR, "pre-commit-check.sh"),
-                            "if": "Bash(git commit*)",
-                            "statusMessage": "Checking git status..."
-                        }
-                    ]
-                }
-            ],
-            "SessionStart": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": os.path.join(HOOKS_DIR, "session-start.sh"),
-                            "statusMessage": "Loading session context..."
-                        }
-                    ]
-                }
-            ],
-            "PreCompact": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": os.path.join(HOOKS_DIR, "pre-compact.sh"),
-                            "statusMessage": "Preserving context before compaction..."
-                        }
-                    ]
-                }
-            ],
-            "Stop": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": os.path.join(HOOKS_DIR, "stop-self-review.sh"),
-                            "statusMessage": "Verifying work completeness..."
-                        }
                     ]
                 }
             ]
@@ -372,302 +348,14 @@ def get_notification_hook():
 
 
 # ---------------------------------------------------------------------------
-# Hook scripts (portable - no hardcoded paths)
+# Hook scripts have moved to the ap-optimal-claude plugin
 # ---------------------------------------------------------------------------
-
-HOOK_PRE_COMMIT = r"""#!/bin/bash
-# PreToolUse hook (git commit): show staged files + git status to the model.
-# Plain stdout from a PreToolUse hook does NOT reach the model - it must be
-# JSON with hookSpecificOutput.additionalContext.
-git rev-parse --git-dir > /dev/null 2>&1 || exit 0
-command -v python3 >/dev/null 2>&1 || exit 0
-exec python3 -c '
-import json, subprocess
-
-def run(cmd):
-    try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=10).stdout.strip()
-    except Exception:
-        return ""
-
-staged = run(["git", "diff", "--staged", "--name-only"])
-status = run(["git", "status", "--short"])
-ctx = "=== Staged files ===\n" + staged + "\n\n=== Git status ===\n" + status
-print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": ctx}}))
-'
-"""
-
-HOOK_SESSION_START = """#!/bin/bash
-# Session startup: initialize project state in bash, then inject context Claude can read
-
-HOME_DEV="$HOME/Documents/dev"
-CWD=$(pwd)
-CONTEXT=""
-REPO_CREATED=""
-
-# Git repo check - only in ~/Documents/dev/*
-if [[ "$CWD" == "$HOME_DEV"/* ]] && ! git rev-parse --git-dir > /dev/null 2>&1; then
-    FOLDER=$(basename "$CWD")
-    if [ ! -f .gitignore ]; then
-        printf 'node_modules/\\n.env\\n.env.*\\n__pycache__/\\n*.pyc\\n.DS_Store\\n.venv/\\nvenv/\\ndist/\\nbuild/\\n*.log\\n' > .gitignore
-    fi
-    git init -q && git add . && git commit -q -m "chore: initial commit" 2>/dev/null
-    if gh repo create "$FOLDER" --private --source=. --push --quiet 2>/dev/null; then
-        REPO_CREATED="GitHub repo '$FOLDER' created and pushed."
-    else
-        REPO_CREATED="git init done but gh repo create failed (name collision or gh not authed)."
-    fi
-fi
-
-# STATUS.md check - only in ~/Documents/dev/*
-if [[ "$CWD" == "$HOME_DEV"/* ]] && [ ! -f STATUS.md ]; then
-    cat > STATUS.md << 'STATUSMD'
-# Project Status
-
-## End Goal
-[describe the end goal here]
-
-## Done
-- nothing yet
-
-## In Progress
-- nothing yet
-
-## Next Steps
-- nothing yet
-
-## Blockers / Decisions
-- none
-STATUSMD
-fi
-
-# Load context files (skip the handoff once newer commits exist - STATUS.md and
-# context/ carry the current state by then, and a stale handoff wastes ~5KB of
-# context every session)
-if [ -f docs/SESSION_HANDOFF.md ]; then
-    HANDOFF_FRESH=1
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-        HEAD_TIME=$(git log -1 --format=%ct 2>/dev/null); HEAD_TIME=${HEAD_TIME:-0}
-        HANDOFF_COMMIT_TIME=$(git log -1 --format=%ct -- docs/SESSION_HANDOFF.md 2>/dev/null); HANDOFF_COMMIT_TIME=${HANDOFF_COMMIT_TIME:-0}
-        HANDOFF_MTIME=$(stat -f %m docs/SESSION_HANDOFF.md 2>/dev/null || stat -c %Y docs/SESSION_HANDOFF.md 2>/dev/null); HANDOFF_MTIME=${HANDOFF_MTIME:-0}
-        if [ "$HANDOFF_MTIME" -lt "$HEAD_TIME" ] && [ "$HANDOFF_COMMIT_TIME" -lt "$HEAD_TIME" ]; then
-            HANDOFF_FRESH=0
-        fi
-    fi
-    if [ "$HANDOFF_FRESH" -eq 1 ]; then
-        CONTEXT="$CONTEXT\\n=== SESSION_HANDOFF.md ===\\n$(cat docs/SESSION_HANDOFF.md)"
-    else
-        CONTEXT="$CONTEXT\\n(docs/SESSION_HANDOFF.md exists but predates newer commits - skipped as stale; STATUS.md and context/ below are current)"
-    fi
-fi
-
-if [ -f STATUS.md ]; then
-    CONTEXT="$CONTEXT\\n=== STATUS.md ===\\n$(cat STATUS.md)"
-fi
-
-# Load context directory files for AI session restoration
-if [ -f context/state.md ]; then
-    CONTEXT="$CONTEXT\\n=== context/state.md ===\\n$(cat context/state.md)"
-fi
-if [ -f context/schema.md ]; then
-    CONTEXT="$CONTEXT\\n=== context/schema.md ===\\n$(cat context/schema.md)"
-fi
-
-# Append instruction Claude will actually see (additionalContext, not systemMessage)
-STARTUP_MSG="\\n[SESSION START]"
-[ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
-STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\\"startup\\") to load project lessons and list relevant skills."
-CONTEXT="$CONTEXT$STARTUP_MSG"
-
-PYTHON=$(command -v python3 || command -v python) 2>/dev/null
-[ -z "$PYTHON" ] && exit 0
-
-echo -e "$CONTEXT" | $PYTHON -c "
-import json, sys
-content = sys.stdin.read()
-print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content}}))
-"
-"""
-
-SKILL_STARTUP = """---
-name: startup
-description: Run at the start of every new session. Loads project lessons and lists relevant skills.
----
-
-# Session Startup
-
-The hook has already handled git repo creation and STATUS.md. Your job here is two things:
-
-## Step 1: Load Project Lessons
-
-If `tasks/lessons.md` exists in the current project root, read it silently and apply all rules before proceeding.
-
-## Step 2: Relevant Skills
-
-From the available skills list, pick 3-5 most relevant to this project and list them:
-`- skill-name: one line on what it does`
-
-## Step 3: Summary
-
-One line: `Session ready | lessons: [loaded N rules / none]`
-
-Note: context usage is shown in the status line. If it climbs above ~60%, the user types `handoff` to save the session. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
-"""
-
-SKILL_UPDATE_GITHUB = """---
-name: update-github
-description: Update all project docs substantively, commit, push, and write a session handoff. Use when the user says "update github". For "deploy", run this first, then the deployment.
----
-
-# Update GitHub
-
-If the project CLAUDE.md defines "update github" differently, follow that instead.
-
-Steps in order:
-
-1. If `docs/SESSION_HANDOFF.md` exists, read it first - it captures prior session work that must be reflected in docs and the commit message.
-2. Scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) - do not use a fixed list, find everything that exists. For each file: read its current content, cross-reference against actual session work (git diff + conversation), and make substantive updates (new entries, revised statuses, updated roadmap items, new insights, current metrics). Cosmetic edits or date-only changes are not enough.
-3. Run `git status` and `git diff --stat HEAD` to confirm what changed.
-4. Commit with a thorough message (type(scope): summary, then WHY, then all changes) covering work from both the current and prior session if a handoff existed.
-5. `git push origin HEAD`.
-6. Write `docs/SESSION_HANDOFF.md` capturing: what we were doing, what was completed, current state, open bugs, next steps in order, key files changed, decisions made, warnings.
-"""
-
-SKILL_PROJECT_DOCS = """---
-name: project-docs
-description: Project documentation system - creates and maintains ROADMAP.md, METRICS.md, EXPERIMENTS.md, context/, docs/adr/, docs/research/. Use at session start when STATUS.md exists but ROADMAP.md does not, or whenever creating or structuring project docs.
----
-
-# Project Documentation System
-
-If STATUS.md exists and ROADMAP.md does not, create ROADMAP.md, METRICS.md, and `context/` immediately - before any other work.
-
-## ROADMAP.md
-Outcome-focused, not a feature list. Sections: End Goal (one sentence), Now, Next, Later, Completed, Risks.
-- Now/Next/Later: outcomes, not tasks
-- Risks table: Risk | Likelihood (1-5) | Impact (1-5) | Mitigation - keep to 3-5 risks max
-Update after completing any milestone or shifting direction.
-
-## METRICS.md
-How we measure success. Table: Metric | Baseline | Target | Current | Last Updated.
-Update at each milestone checkpoint.
-
-## EXPERIMENTS.md
-For AI/ML projects and product experiments. Prevents repeating failed experiments.
-Each entry: Date, Hypothesis, Method, Result, Conclusion, Next Step.
-Skip for pure infrastructure/refactoring work.
-
-## context/ directory
-AI-optimized snapshot for fast session restoration. Update after every logical milestone.
-- `context/state.md` - current phase, immediate next action, recent changes, blockers
-- `context/schema.md` - data structures, interfaces, API contracts, environment variables
-- `context/decisions.md` - tactical/operational decisions (tooling, process, config) + one-line reasoning
-- `context/insights.md` - discoveries, gotchas, non-obvious learnings
-
-Note: `context/decisions.md` is for operational decisions. Technology/architecture choices (framework, database, irreversible patterns) belong in `docs/adr/` instead. Do not duplicate entries between the two.
-
-## docs/adr/ (Architecture Decision Records)
-One file per architectural decision: `docs/adr/NNN-title.md`
-Fields: Status, Context, Decision, Consequences, Alternatives Considered.
-Append-only - never edit past ADRs, write a new one to supersede.
-Create when: choosing a framework, database, architecture pattern, or any hard-to-reverse decision.
-
-## docs/research/
-Save reference material, papers, and external docs here before reading so they are available next session. Name files: `YYYY-MM-DD-[topic].md`. Keep a one-line description at the top of each file.
-"""
-
-SKILL_SAVE_TRANSCRIPTION = """---
-name: save-transcription
-description: Save any provided audio, video, Zoom call, voice memo, or other recording/transcript as a file in the current project. Use automatically whenever the user provides a transcript or recording content.
----
-
-# Save Transcription
-
-- Save to `docs/transcriptions/YYYY-MM-DD-[source-or-topic].md` (e.g., `docs/transcriptions/2026-04-15-zoom-call.md`).
-- Create the `docs/transcriptions/` directory if it does not exist.
-- Include metadata at the top: date, source type, participants (if known), topic/title.
-- Do this automatically without being asked.
-"""
-
-SKILL_GRILL_ME = """---
-name: grill-me
-description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
----
-
-Interview me relentlessly about every aspect of this plan until
-we reach a shared understanding. Walk down each branch of the design
-tree resolving dependencies between decisions one by one.
-
-If a question can be answered by exploring the codebase, explore
-the codebase instead.
-
-For each question, provide your recommended answer.
-"""
-
-HOOK_PRE_COMPACT = """#!/bin/bash
-# Auto-save handoff before context compaction
-echo '{"systemMessage":"Context compaction is about to occur. Before compacting, immediately run the handoff skill and save docs/SESSION_HANDOFF.md for this project. Do this now - write the full handoff file first, then compaction can proceed."}'
-"""
-
-HOOK_STOP_SELF_REVIEW = """#!/bin/bash
-# Stop hook: require a self-review pass only when code was written or edited
-# since the last real user prompt. Pure Q&A turns stop silently (zero cost).
-# Hook input arrives as JSON on stdin; the transcript at transcript_path is JSONL.
-command -v python3 >/dev/null 2>&1 || exit 0
-exec python3 -c '
-import json, sys
-
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-
-if d.get("stop_hook_active"):
-    sys.exit(0)
-
-path = d.get("transcript_path") or ""
-EDIT_TOOLS = ("Write", "Edit", "NotebookEdit")
-edited = False
-try:
-    with open(path) as f:
-        for line in f:
-            try:
-                entry = json.loads(line)
-            except Exception:
-                continue
-            message = entry.get("message") or {}
-            content = message.get("content")
-            if entry.get("type") == "user":
-                # A genuine user prompt (string content, or blocks with no
-                # tool_result) resets the flag; tool results do not.
-                if isinstance(content, str):
-                    edited = False
-                elif isinstance(content, list) and not any(
-                    isinstance(b, dict) and b.get("type") == "tool_result" for b in content
-                ):
-                    edited = False
-                continue
-            if not isinstance(content, list):
-                continue
-            if any(
-                isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in EDIT_TOOLS
-                for b in content
-            ):
-                edited = True
-except Exception:
-    sys.exit(0)
-
-if edited:
-    reason = (
-        "Code was written or modified this turn. Before stopping, complete the 3-pass self-review: "
-        "(1) Verification: run the relevant tests/checks and confirm they pass. "
-        "(2) Adversarial review: which assumptions did you not verify? How could this fail? "
-        "(3) Completeness: re-read the original request - was everything done? "
-        "Fix any issues found, then stop."
-    )
-    print(json.dumps({"decision": "block", "reason": reason}))
-'
-"""
+# The four bash hooks (pre-commit-check, session-start, pre-compact,
+# stop-self-review) now live in plugins/ap-optimal-claude/hooks/ and are
+# registered via that plugin's hooks/hooks.json, so they auto-update with the
+# rest of the kit. Only the OS-specific Notification hook (get_notification_hook
+# above) is still installed directly into settings.json by this script, because
+# its Windows variant must run without bash.
 
 
 # ---------------------------------------------------------------------------
@@ -779,10 +467,18 @@ def install_ccx_wrapper():
 # ---------------------------------------------------------------------------
 
 def install_team_plugin():
-    """Register the team marketplace and install ap-optimal-claude via the claude CLI."""
+    """Belt-and-suspenders plugin install via the claude CLI.
+
+    settings.json already pre-declares the marketplace (auto-update ON) and
+    enables the plugin via extraKnownMarketplaces + enabledPlugins, so on most
+    clients the plugin installs and stays current with no CLI step. This runs
+    the explicit CLI commands anyway to cover older clients that do not act on
+    those settings keys.
+    """
     claude_bin = shutil.which("claude")
     if not claude_bin:
-        print("  [SKIP] claude CLI not found on PATH. Install the plugin later inside Claude Code:")
+        print("  [SKIP] claude CLI not on PATH - settings.json already enables the")
+        print("         plugin, so it should install on restart. If it does not, run:")
         print("         /plugin marketplace add Coach-Foundation/claude-code-best-practices")
         print("         /plugin install ap-optimal-claude@coach-foundation")
         return
@@ -836,20 +532,28 @@ def setup():
         json.dump(settings, f, indent=2)
     print(f"  [OK] {settings_path}")
 
-    # Write hook scripts
-    print("\n4. Installing hook scripts...")
-    write_file(os.path.join(HOOKS_DIR, "pre-commit-check.sh"), HOOK_PRE_COMMIT, executable=True)
-    write_file(os.path.join(HOOKS_DIR, "session-start.sh"), HOOK_SESSION_START, executable=True)
-    write_file(os.path.join(HOOKS_DIR, "pre-compact.sh"), HOOK_PRE_COMPACT, executable=True)
-    write_file(os.path.join(HOOKS_DIR, "stop-self-review.sh"), HOOK_STOP_SELF_REVIEW, executable=True)
-
-    # Remove retired afk/context-reminder machinery from previous versions.
-    # The 15-min reminder loop was a token sink: each wakeup re-read the whole
-    # conversation at cold-cache prices. The status line shows context % instead.
-    legacy_afk = os.path.join(HOOKS_DIR, "afk-resume.sh")
-    if os.path.exists(legacy_afk):
-        os.remove(legacy_afk)
-        print("  [REMOVED] afk-resume.sh (reminder loop retired)")
+    # Hooks now ship in the ap-optimal-claude plugin (hooks/hooks.json) so they
+    # auto-update with the rest of the kit. Remove the copies that older installs
+    # wrote into ~/.claude/hooks: leaving them would double-fire every hook once
+    # the plugin updates (plugin + settings.json would both register them). The
+    # Notification hook stays inline in settings.json and needs no script file.
+    print("\n4. Migrating hooks to the plugin (removing old local copies)...")
+    migrated_hooks = [
+        "pre-commit-check.sh", "session-start.sh",
+        "pre-compact.sh", "stop-self-review.sh",
+        # afk-resume.sh: retired reminder loop from earlier versions (token sink -
+        # each wakeup re-read the whole conversation at cold-cache prices).
+        "afk-resume.sh",
+    ]
+    removed_any = False
+    for hname in migrated_hooks:
+        hpath = os.path.join(HOOKS_DIR, hname)
+        if os.path.exists(hpath):
+            os.remove(hpath)
+            print(f"  [REMOVED] {hname}")
+            removed_any = True
+    if not removed_any:
+        print("  Clean install - nothing to migrate.")
 
     # Write skills
     print("\n4b. Installing skills...")
@@ -916,12 +620,17 @@ def setup():
     print(f"\nPlatform:       {plat_name}")
     print(f"CLAUDE.md:      {os.path.join(CLAUDE_DIR, 'CLAUDE.md')}")
     print(f"settings.json:  {os.path.join(CLAUDE_DIR, 'settings.json')}")
-    print(f"Hooks:          {HOOKS_DIR}")
+    print(f"Hooks:          via the ap-optimal-claude plugin (auto-updating)")
+
+    print("\n--- Continuous updates (auto-configured) ---")
+    print("  The team marketplace is registered with auto-update ON, so future")
+    print("  skill / agent / hook changes arrive on restart - no re-running this")
+    print("  installer for those. Re-run it only for CLAUDE.md / settings / deny-rule changes.")
 
     print("\n--- Token optimization (auto-configured) ---")
     print("  MAX_THINKING_TOKENS=10000     (caps the extended-thinking budget)")
     print("  DISABLE_AUTO_COMPACT=true     (prefer session handoff files over autocompact)")
-    print("  Stop hook                      (self-review pass when code was edited)")
+    print("  Stop hook (via plugin)         (self-review pass when code was edited)")
 
     print("\n--- How to use ---")
     print("  ccx             Start Claude Code (zero prompts, deny-rule guardrails)")

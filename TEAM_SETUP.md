@@ -60,7 +60,10 @@ The installer replaces CLAUDE.md and settings.json (timestamped backups are made
 You'll keep everything you like and gain the verification hooks, guardrails, and session memory. If something feels wrong, your backups are in `~/.claude/` with timestamps and the plugin uninstalls in one command.
 
 **Windows?**
-Run `python claude-setup.py` instead. Everything works (plugin skills, agents, guardrails, settings) EXCEPT the four hook scripts, which are bash - they need WSL or Git Bash to fire. If you're on plain Windows you still get the full plugin + guardrails; the automatic session-context loading and stop-time self-review just won't run. Native Windows hook support is planned for plugin v1.1.
+Run `python claude-setup.py` instead. Everything works (plugin skills, agents, guardrails, settings) EXCEPT the four hook scripts, which are bash - they need WSL or Git Bash to fire. If you're on plain Windows you still get the full plugin + guardrails; the automatic session-context loading and stop-time self-review just won't run. (The hooks now ship inside the plugin so they auto-update, but they are still bash - native Windows support is on the roadmap.)
+
+**Do I need to update this myself later?**
+No. The team plugin is installed with auto-update on, so new skills, agents, and hooks arrive automatically when you restart Claude Code - you never re-run anything for those. You only re-run the setup paste-block if the core instructions or safety rules change, and we'll tell you in Slack when that happens (rare).
 
 **Something broke / question?**
 Post in the Slack thread. Known quirk: if `ccx` is not found after install, add `~/.local/bin` to your PATH (the installer prints the exact line).
