@@ -319,6 +319,88 @@ def get_settings():
     return settings
 
 
+# Hook scripts that moved into the ap-optimal-claude plugin (v1.1.0). When
+# merging into an existing settings.json we strip any leftover registrations of
+# these (from an older direct install) so they do not double-fire with the
+# plugin's copies. Matched by basename anywhere in the command string.
+MIGRATED_HOOK_SCRIPTS = (
+    "pre-commit-check.sh", "session-start.sh",
+    "pre-compact.sh", "stop-self-review.sh",
+)
+
+
+def _strip_migrated_hooks(hooks):
+    """Drop any hook entry whose command references a now-plugin-shipped script.
+    Empties (events/groups left with no hooks) are removed so the structure stays clean."""
+    cleaned = {}
+    for event, groups in hooks.items():
+        new_groups = []
+        for group in groups:
+            kept = [h for h in group.get("hooks", [])
+                    if not any(s in (h.get("command") or "") for s in MIGRATED_HOOK_SCRIPTS)]
+            if kept:
+                ng = dict(group)
+                ng["hooks"] = kept
+                new_groups.append(ng)
+        if new_groups:
+            cleaned[event] = new_groups
+    return cleaned
+
+
+def merge_settings(existing, managed):
+    """Merge the managed baseline into an existing settings.json non-destructively.
+
+    Preserves user customizations - theme, tui, extra hooks (RTK, pytest,
+    spec-guard), other enabled plugins, and any unknown top-level keys. The
+    installer owns a small set of baseline keys (env, autoCompactWindow,
+    statusLine, enableAllProjectMcpServers, marketplace) and wins for those;
+    deny rules and enabled plugins are UNIONED so nothing the user added is lost.
+    A fresh install (existing == {}) just yields the managed baseline.
+    """
+    result = dict(existing)  # carry over every unknown top-level key untouched
+
+    # Baseline keys the installer owns outright
+    for key in ("enableAllProjectMcpServers", "env", "autoCompactWindow", "statusLine"):
+        if key in managed:
+            result[key] = managed[key]
+
+    # permissions: keep user keys (e.g. allow), enforce defaultMode, UNION the deny baseline
+    perms = dict(result.get("permissions", {}))
+    mperms = managed.get("permissions", {})
+    if "defaultMode" in mperms:
+        perms["defaultMode"] = mperms["defaultMode"]
+    deny = list(perms.get("deny", []))
+    for rule in mperms.get("deny", []):
+        if rule not in deny:
+            deny.append(rule)
+    if deny:
+        perms["deny"] = deny
+    if perms:
+        result["permissions"] = perms
+
+    # extraKnownMarketplaces: add managed entries, keep any the user already has
+    mkts = dict(result.get("extraKnownMarketplaces", {}))
+    mkts.update(managed.get("extraKnownMarketplaces", {}))
+    if mkts:
+        result["extraKnownMarketplaces"] = mkts
+
+    # enabledPlugins: UNION - never disable a plugin the user already enabled
+    plugins = dict(result.get("enabledPlugins", {}))
+    plugins.update(managed.get("enabledPlugins", {}))
+    if plugins:
+        result["enabledPlugins"] = plugins
+
+    # hooks: strip the migrated-hook registrations (now in the plugin), keep every
+    # other user hook (RTK, pytest, spec-guard), then set the managed Notification hook
+    hooks = _strip_migrated_hooks(result.get("hooks", {}))
+    for event, groups in managed.get("hooks", {}).items():
+        hooks[event] = groups  # managed owns Notification
+    if hooks:
+        result["hooks"] = hooks
+
+    return result
+
+
 def get_notification_hook():
     if IS_MAC:
         return {
@@ -524,10 +606,18 @@ def setup():
     claude_md = "# Claude Code Instructions\n\n" + get_platform_section() + CLAUDE_MD_BODY
     write_file(os.path.join(CLAUDE_DIR, "CLAUDE.md"), claude_md)
 
-    # Write settings.json
-    print("\n3. Installing settings.json...")
-    settings = get_settings()
+    # Write settings.json - MERGE into any existing file (a timestamped backup was
+    # made above). Overwriting wholesale would wipe user customizations: other
+    # enabled plugins, theme/tui, and extra hooks (RTK, pytest, spec-guard).
+    print("\n3. Installing settings.json (merging into existing)...")
+    managed = get_settings()
     settings_path = os.path.join(CLAUDE_DIR, "settings.json")
+    try:
+        with open(settings_path) as f:
+            existing = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing = {}
+    settings = merge_settings(existing, managed)
     with open(settings_path, "w") as f:
         json.dump(settings, f, indent=2)
     print(f"  [OK] {settings_path}")
