@@ -20,4 +20,4 @@ From the available skills list, pick 3-5 most relevant to this project and list 
 
 One line: `Session ready | lessons: [loaded N rules / none]`
 
-Note: context usage is shown in the status line. If it climbs above ~60%, the user types `handoff` to save the session. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
+Note: context usage is shown in the status line. Quality degrades past ~40% — if it reaches 40%, the user types `handoff` immediately. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.

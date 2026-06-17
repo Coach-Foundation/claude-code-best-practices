@@ -1,6 +1,7 @@
 ---
 name: code-verifier
 description: Adversarial verification of completed work on a strong model. Use after implementing a feature or fix, before claiming done. Tries to REFUTE the claim that the work is correct and complete.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 

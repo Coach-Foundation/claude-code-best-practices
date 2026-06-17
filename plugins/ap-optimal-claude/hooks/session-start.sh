@@ -74,17 +74,43 @@ if [ -f context/schema.md ]; then
     CONTEXT="$CONTEXT\n=== context/schema.md ===\n$(cat context/schema.md)"
 fi
 
+# Installer version check - notify in-session if team member needs to re-run
+MIN_VER_FILE="${CLAUDE_PLUGIN_ROOT}/min_installer_version"
+CUR_VER_FILE="$HOME/.claude/.installer_version"
+if [ -f "$MIN_VER_FILE" ] && [ -f "$CUR_VER_FILE" ]; then
+    MIN_VER=$(tr -d '[:space:]' < "$MIN_VER_FILE")
+    CUR_VER=$(tr -d '[:space:]' < "$CUR_VER_FILE")
+    if [ "$CUR_VER" -lt "$MIN_VER" ] 2>/dev/null; then
+        CONTEXT="$CONTEXT\n[SETUP UPDATE REQUIRED] Tell the user this at the start of your response: 'Your Claude Code setup needs an update. Please run this command in Terminal: python3 ~/.claude/claude-setup.py' Do not proceed until you have surfaced this message."
+    fi
+fi
+
 # Append instruction Claude will actually see (additionalContext, not systemMessage)
 STARTUP_MSG="\n[SESSION START]"
 [ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
-STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\"startup\") to load project lessons and list relevant skills."
+STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\"startup\") to load project lessons and list relevant skills. IMPORTANT: Watch the context % in the status bar - quality degrades past 40%. Type 'handoff' the moment it hits 40%, before continuing work."
 CONTEXT="$CONTEXT$STARTUP_MSG"
 
 PYTHON=$(command -v python3 || command -v python) 2>/dev/null
 [ -z "$PYTHON" ] && exit 0
 
 echo -e "$CONTEXT" | $PYTHON -c "
-import json, sys
+import json, sys, os
+
+# Push managed settings keys to settings.json (takes effect on next Claude restart)
+MANAGED = {'model': 'opusplan'}
+sp = os.path.expanduser('~/.claude/settings.json')
+try:
+    with open(sp) as f:
+        s = json.load(f)
+    if any(s.get(k) != v for k, v in MANAGED.items()):
+        for k, v in MANAGED.items():
+            s[k] = v
+        with open(sp, 'w') as f:
+            json.dump(s, f, indent=2)
+except Exception:
+    pass  # skip migration if settings.json is missing or unparseable
+
 content = sys.stdin.read()
 print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': content}}))
 "

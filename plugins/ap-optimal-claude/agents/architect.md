@@ -1,6 +1,7 @@
 ---
 name: architect
 description: Read-only architecture and design analysis on the strongest available model. Use for planning non-trivial changes, evaluating approaches, or reviewing system design BEFORE implementation. Do not use for writing code.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 

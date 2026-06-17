@@ -277,6 +277,9 @@ def get_settings():
             "DISABLE_AUTO_COMPACT": "true"
         },
         "autoCompactWindow": 1000000,
+        # Opus for plan/think mode, Sonnet for execution - automatic smart routing.
+        # Team gets stronger reasoning when planning without paying Opus rates for everything.
+        "model": "opusplan",
         # Pre-declare the team marketplace with auto-update ON and the plugin
         # enabled, so a single installer run wires up continuous updates: skills,
         # agents, and hooks (which now live in the plugin) flow to the user on
@@ -313,8 +316,7 @@ def get_settings():
             "command": "npx -y ccstatusline@2",
             "padding": 0
         }
-        # No "model" pin: let each user keep their account default. The old
-        # "sonnet" alias form is outdated; use full model IDs if pinning.
+        # opusplan: Opus for plan/think mode, Sonnet for execution - see above.
     }
     return settings
 
@@ -360,7 +362,7 @@ def merge_settings(existing, managed):
     result = dict(existing)  # carry over every unknown top-level key untouched
 
     # Baseline keys the installer owns outright
-    for key in ("enableAllProjectMcpServers", "env", "autoCompactWindow", "statusLine"):
+    for key in ("enableAllProjectMcpServers", "env", "autoCompactWindow", "statusLine", "model"):
         if key in managed:
             result[key] = managed[key]
 
@@ -466,7 +468,7 @@ From the available skills list, pick 3-5 most relevant to this project and list 
 
 One line: `Session ready | lessons: [loaded N rules / none]`
 
-Note: context usage is shown in the status line. If it climbs above ~60%, the user types `handoff` to save the session. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
+Note: context usage is shown in the status line. Quality degrades past ~40% — if it reaches 40%, the user types `handoff` immediately. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
 """
 
 SKILL_UPDATE_GITHUB = """---
@@ -480,12 +482,12 @@ If the project CLAUDE.md defines "update github" differently, follow that instea
 
 Steps in order:
 
-1. If `docs/SESSION_HANDOFF.md` exists, read it first - it captures prior session work that must be reflected in docs and the commit message.
+1. Invoke the handoff skill first - safety net before anything changes.
 2. Scan ALL .md files in the project (root, context/, docs/, docs/adr/, anywhere) - do not use a fixed list, find everything that exists. For each file: read its current content, cross-reference against actual session work (git diff + conversation), and make substantive updates (new entries, revised statuses, updated roadmap items, new insights, current metrics). Cosmetic edits or date-only changes are not enough.
 3. Run `git status` and `git diff --stat HEAD` to confirm what changed.
-4. Commit with a thorough message (type(scope): summary, then WHY, then all changes) covering work from both the current and prior session if a handoff existed.
+4. Commit with a thorough message (type(scope): summary, then WHY, then all changes).
 5. `git push origin HEAD`.
-6. Write `docs/SESSION_HANDOFF.md` capturing: what we were doing, what was completed, current state, open bugs, next steps in order, key files changed, decisions made, warnings.
+6. Invoke the handoff skill again to capture the final documented state.
 """
 
 SKILL_PROJECT_DOCS = """---
@@ -821,6 +823,20 @@ def setup():
     print("\n7. Installing the ap-optimal-claude team plugin...")
     install_team_plugin()
 
+    # Self-copy: save installer to ~/.claude/claude-setup.py so the update
+    # notification (injected by the session-start hook) always has a valid path
+    # to give the user, regardless of where they originally ran this from.
+    try:
+        self_dst = os.path.join(CLAUDE_DIR, "claude-setup.py")
+        if os.path.abspath(__file__) != os.path.abspath(self_dst):
+            shutil.copy2(__file__, self_dst)
+        # Version file read by the session-start hook to detect outdated installs
+        with open(os.path.join(CLAUDE_DIR, ".installer_version"), "w") as vf:
+            vf.write("1\n")
+        print("  [OK] Saved installer to ~/.claude/claude-setup.py")
+    except Exception as e:
+        print(f"  [!] Could not self-copy installer: {e}")
+
     # Done
     print("\n" + "=" * 50)
     print("Setup complete!")
@@ -832,9 +848,9 @@ def setup():
     print(f"Hooks:          via the ap-optimal-claude plugin (auto-updating)")
 
     print("\n--- Continuous updates (auto-configured) ---")
-    print("  The team marketplace is registered with auto-update ON, so future")
-    print("  skill / agent / hook changes arrive on restart - no re-running this")
-    print("  installer for those. Re-run it only for CLAUDE.md / settings / deny-rule changes.")
+    print("  The team marketplace is registered with auto-update ON. Future")
+    print("  skill / agent / hook / settings changes arrive automatically on restart.")
+    print("  If a re-run is ever needed, Claude Code will tell you inside the session.")
 
     print("\n--- Token optimization (auto-configured) ---")
     print("  MAX_THINKING_TOKENS=10000     (caps the extended-thinking budget)")
