@@ -281,8 +281,7 @@ def get_settings():
         # .mcp.json - require explicit opt-in per project instead.
         "enableAllProjectMcpServers": False,
         "env": {
-            "MAX_THINKING_TOKENS": "10000",
-            "DISABLE_AUTO_COMPACT": "true"
+            "MAX_THINKING_TOKENS": "10000"
         },
         "autoCompactWindow": 1000000,
         # Opus for plan/think mode, Sonnet for execution - automatic smart routing.
@@ -862,7 +861,7 @@ def setup():
 
     print("\n--- Token optimization (auto-configured) ---")
     print("  MAX_THINKING_TOKENS=10000     (caps the extended-thinking budget)")
-    print("  DISABLE_AUTO_COMPACT=true     (prefer session handoff files over autocompact)")
+
     print("  Stop hook (via plugin)         (self-review pass when code was edited)")
 
     print("\n--- How to use ---")
