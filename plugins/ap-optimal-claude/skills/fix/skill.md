@@ -46,3 +46,9 @@ After the fix is confirmed working:
 - Set Status: Resolved
 - Fill in Root Cause section
 - Check off all Verification items
+
+## When Things Go Wrong
+
+- **Fix causes other tests to fail:** Stop. Re-triage from scratch using the new failure set - do not patch forward on top of a broken fix. Update the fix file with the new symptom set and restart systematic-debugging.
+- **Fix doesn't work after the first attempt:** Do not guess-and-check. Return to `superpowers:systematic-debugging` with the updated evidence. Guessing wastes cycles and masks the real root cause.
+- **Bug cannot be reproduced:** Document every reproduction attempt tried (env, inputs, conditions) in the fix file. Set Status to "Cannot Reproduce" and close the file. Do not leave it as "Investigating" indefinitely.

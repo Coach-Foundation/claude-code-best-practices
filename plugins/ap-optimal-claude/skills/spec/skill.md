@@ -44,6 +44,17 @@ Ask:
 - [ ] [Testable criterion]
 - [ ] [Testable criterion]
 
+## User Flows
+
+### Happy Path
+[Step 1 → Step 2 → Step 3 → Outcome]
+
+### Nothing Works
+[Step 1 → Error → What does the user see?]
+
+### Mid-Flow
+[Step 1 → Step 2 → Abandon/failure → What state is the user left in?]
+
 ## Test Plan
 - [ ] [Test case]
 - [ ] [Test case]

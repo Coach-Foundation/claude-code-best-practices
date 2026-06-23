@@ -15,3 +15,9 @@ Steps in order:
 4. Commit with a thorough message (use the commit-rules skill).
 5. `git push origin HEAD`.
 6. Invoke the handoff skill again to capture the final documented state.
+
+## When Things Go Wrong
+
+- **`git push` fails (no upstream, auth error, rejected):** Stop immediately. Report the exact error output to the user. Do not force-push under any circumstance - let the user decide how to proceed.
+- **Commit fails due to a pre-commit hook:** Fix the underlying hook issue first (lint error, formatting, secret detected), then re-commit. Never use `--no-verify` to bypass hooks.
+- **No .md files have substantive changes:** Still write a minimal update to at least one doc (e.g., add a "YYYY-MM-DD - no changes this session" entry to the relevant STATUS or ROADMAP file) so the subsequent handoff is not empty.

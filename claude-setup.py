@@ -299,10 +299,18 @@ def get_settings():
                     "repo": "Coach-Foundation/claude-code-best-practices"
                 },
                 "autoUpdate": True
+            },
+            "bradautomates": {
+                "source": {
+                    "source": "github",
+                    "repo": "bradautomates/claude-video"
+                },
+                "autoUpdate": True
             }
         },
         "enabledPlugins": {
-            "ap-optimal-claude@coach-foundation": True
+            "ap-optimal-claude@coach-foundation": True,
+            "watch@bradautomates": True
         },
         # Only the Notification hook stays here: its Windows variant is a direct
         # powershell command that fires without bash, so it cannot move into the

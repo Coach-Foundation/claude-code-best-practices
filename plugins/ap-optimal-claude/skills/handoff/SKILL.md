@@ -67,3 +67,8 @@ Say: "Handoff written to `docs/SESSION_HANDOFF.md` in `<project>`. Now: 1. Type 
 ## Note on cross-session handoffs
 
 If the user pasted a snippet of the other session's chat, use it - it captures mid-debug state that git cannot. If no snippet was provided, note in the handoff that conversation history was unavailable and the reconstruction is based on git state only.
+
+## When Things Go Wrong
+
+- **Git state is dirty and uncommittable (merge conflicts, detached HEAD, untracked secrets):** Do not attempt to commit. Instead, run `git diff HEAD` and paste the raw output into the handoff under an "Uncommitted Changes" section so the next session can recover the work.
+- **SESSION_HANDOFF.md can't be written (permission error, missing `docs/` dir):** Fall back to writing `HANDOFF.md` in the project root. Note in the file that it is in the root due to a write error, and remind the user to move it to `docs/` once the permission issue is resolved.
