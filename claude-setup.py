@@ -284,6 +284,7 @@ def get_settings():
             "MAX_THINKING_TOKENS": "10000"
         },
         "autoCompactWindow": 1000000,
+        "skillListingBudgetFraction": 0.02,
         # Opus for plan/think mode, Sonnet for execution - automatic smart routing.
         # Team gets stronger reasoning when planning without paying Opus rates for everything.
         "model": "opusplan",
