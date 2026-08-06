@@ -97,8 +97,11 @@ PYTHON=$(command -v python3 || command -v python) 2>/dev/null
 echo -e "$CONTEXT" | $PYTHON -c "
 import json, sys, os
 
-# Push managed settings keys to settings.json (takes effect on next Claude restart)
-MANAGED = {'model': 'opusplan'}
+# Push managed settings keys to settings.json (takes effect on next Claude restart).
+# SCALAR keys only - the loop below does a flat overwrite (s[k] = v), so never add
+# merge-semantics keys like 'permissions' here or it would clobber a user's own rules.
+# Deny-rule changes must go through re-running the installer, not this hook.
+MANAGED = {'model': 'opusplan', 'skillListingBudgetFraction': 0.02}
 sp = os.path.expanduser('~/.claude/settings.json')
 try:
     with open(sp) as f:

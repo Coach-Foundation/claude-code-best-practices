@@ -24,6 +24,19 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/delegate-findings-note.sh",
+            "timeout": 10,
+            "statusMessage": "Noting what the delegate actually checked..."
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [

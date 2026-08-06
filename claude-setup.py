@@ -14,6 +14,8 @@ Usage:
     Windows:    python claude-setup.py
 """
 
+import filecmp
+import glob
 import json
 import os
 import platform
@@ -599,14 +601,21 @@ claude %*
 # ---------------------------------------------------------------------------
 
 def backup_file(path):
-    """Back up a file with a timestamp if it exists."""
-    if os.path.exists(path):
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = f"{path}.backup_{ts}"
-        shutil.copy2(path, backup_path)
-        print(f"  [BACKUP] {os.path.basename(path)} -> {os.path.basename(backup_path)}")
-        return True
-    return False
+    """Back up a file with a timestamp, but only when its contents differ from
+    the most recent existing backup. The installer is meant to be re-run often
+    (that is how settings changes propagate), so an unconditional copy would
+    leave a growing pile of identical backups on every team member's machine -
+    including a 200KB+ .claude.json copied on every no-op run."""
+    if not os.path.exists(path):
+        return False
+    existing = sorted(glob.glob(f"{path}.backup_*"))
+    if existing and filecmp.cmp(path, existing[-1], shallow=False):
+        return False  # unchanged since last backup - nothing worth duplicating
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = f"{path}.backup_{ts}"
+    shutil.copy2(path, backup_path)
+    print(f"  [BACKUP] {os.path.basename(path)} -> {os.path.basename(backup_path)}")
+    return True
 
 
 def write_file(path, content, executable=False):
