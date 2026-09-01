@@ -162,10 +162,9 @@ introduce violations either.
 - Update project documentation .md files after completing each logical milestone or at natural breakpoints.
 
 ## Self-Improvement Loop
-- After ANY correction from the user, append to `tasks/lessons.md` in the project root:
-  `- [YYYY-MM-DD] RULE: <what to do or avoid> | WHY: <reason given>`
-- At session start, if `tasks/lessons.md` exists, read it silently and apply all rules for the session
-- Never delete entries - this file compounds over time
+- Corrections and durable lessons go to Claude Code's built-in Auto Memory (one fact per file, under this project's memory directory, loaded automatically each session) - not a hand-maintained log file. `tasks/lessons.md` is retired; do not create new ones.
+- After ANY correction from the user, save it to memory using the memory instructions already in your system prompt - do not just narrate it back.
+- A `memory-write-check` hook nudges, at most once per session, if a correction-shaped moment (an interruption or a denied/failed action) passed with no memory file written since. Treat that nudge as a prompt to log what was learned, not something to dismiss.
 
 ## Project Documentation
 - For any project under ~/Documents/dev/: if STATUS.md exists and ROADMAP.md does not, invoke the project-docs skill immediately at session start - before any other work. The skill defines ROADMAP.md, METRICS.md, EXPERIMENTS.md, context/, docs/adr/, and docs/research/.
@@ -466,16 +465,16 @@ def get_notification_hook():
 
 SKILL_STARTUP = """---
 name: startup
-description: Run at the start of every new session. Loads project lessons and lists relevant skills.
+description: Run at the start of every new session. Lists relevant skills for the project.
 ---
 
 # Session Startup
 
 The hook has already handled git repo creation and STATUS.md. Your job here is two things:
 
-## Step 1: Load Project Lessons
+## Step 1: Memory Context
 
-If `tasks/lessons.md` exists in the current project root, read it silently and apply all rules before proceeding.
+Auto Memory has already been loaded into context automatically by Claude Code itself (not by this project's session-start hook) - do not re-read it. If a legacy `tasks/lessons.md` still exists in this project root (pre-migration, not yet ported), read it silently and apply its rules for this session too.
 
 ## Step 2: Relevant Skills
 
@@ -484,7 +483,7 @@ From the available skills list, pick 3-5 most relevant to this project and list 
 
 ## Step 3: Summary
 
-One line: `Session ready | lessons: [loaded N rules / none]`
+One line: `Session ready | memory: [auto-loaded]`
 
 Note: context usage is shown in the status line. Quality degrades past ~40% — if it reaches 40%, the user types `handoff` immediately. Do not schedule reminder wakeups - they re-read the whole conversation at cold-cache prices.
 """

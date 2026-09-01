@@ -88,7 +88,7 @@ fi
 # Append instruction Claude will actually see (additionalContext, not systemMessage)
 STARTUP_MSG="\n[SESSION START]"
 [ -n "$REPO_CREATED" ] && STARTUP_MSG="$STARTUP_MSG $REPO_CREATED"
-STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\"startup\") to load project lessons and list relevant skills. IMPORTANT: Watch the context % in the status bar - quality degrades past 40%. Type 'handoff' the moment it hits 40%, before continuing work."
+STARTUP_MSG="$STARTUP_MSG Invoke the startup skill now (Skill tool, skill=\"startup\") to list relevant skills. IMPORTANT: Watch the context % in the status bar - quality degrades past 40%. Type 'handoff' the moment it hits 40%, before continuing work."
 CONTEXT="$CONTEXT$STARTUP_MSG"
 
 PYTHON=$(command -v python3 || command -v python) 2>/dev/null
