@@ -11,8 +11,8 @@ These best practices come from official Anthropic documentation, community bench
 Read these files (silently, don't echo contents back):
 - `~/.claude/CLAUDE.md`
 - `~/.claude/settings.json`
-- `~/.claude/.claude.json` (if exists)
-- Check if `~/.claudeignore` exists
+- `~/.claude.json` (if exists)
+- Check `permissions.deny` in settings.json for Read rules that keep junk folders out
 - Check what plugins are installed: look at `enabledPlugins` in settings.json
 
 Report a brief summary: "Here's what you have now:" with bullet points for key settings.
@@ -32,15 +32,15 @@ These are new settings/features the user doesn't have. Add them unless the user 
   "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "75"
 }
 ```
-- MAX_THINKING_TOKENS: Caps thinking tokens at 10K (default ~32K). Thinking tokens cost 5x more than input. ~70% savings.
-- CLAUDE_CODE_SUBAGENT_MODEL: Routes subagents to Haiku (~15x cheaper). Subagents read files and return summaries - they don't need full reasoning.
-- CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: Triggers compaction at 75% instead of 95%, giving more buffer.
+- MAX_THINKING_TOKENS: Caps thinking tokens at 10K on older models with a fixed thinking budget. Thinking tokens are billed as output tokens. Current models (Opus 5.5, Sonnet 5.5) ignore this cap and use the effort level instead.
+- CLAUDE_CODE_SUBAGENT_MODEL: Default model for subagents that don't pick their own. A model Claude passes when spawning, or a `model` field in the agent's file, wins over it. Add `"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"` only if the user wants Haiku forced on every subagent.
+- CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: Triggers compaction earlier (at 75% of the compaction window). It can only lower the trigger point and only applies in sessions that compact before the model's context limit. `/autocompact` changes the window; `DISABLE_AUTO_COMPACT=1` turns auto-compaction off.
 
 **Default model** (add if missing):
 ```json
 "model": "sonnet"
 ```
-- Defaults to Sonnet for everyday work. Sonnet handles ~80% of coding tasks well at ~4x less cost than Opus. Users can type `ultrathink` for one-off deep reasoning or `/model opus` when they genuinely need it.
+- Defaults to Sonnet for everyday work (Pro and Max plans otherwise start on Opus). Sonnet costs about half as much per token as Opus. Users can type `ultrathink` for one-off deep reasoning or `/model opus` when they genuinely need it.
 
 **CLAUDE.md Context Efficiency section** (add if not present):
 ```markdown
@@ -55,22 +55,18 @@ These are new settings/features the user doesn't have. Add them unless the user 
 - Do not paste file contents into subagent prompts. Give them the path and let them read it.
 ```
 
-**.claudeignore file** (create if not present):
-```
-node_modules/
-dist/
-build/
-.next/
-*.lock
-__pycache__/
-.git/
-*.db
-*.sqlite
-*.log
-coverage/
-*.min.js
-*.min.css
-vendor/
+**Read deny rules** (add if missing, merge into `permissions.deny` in settings.json). Claude Code has no `.claudeignore` file; deny rules are how to keep Claude out of junk folders:
+```json
+"permissions": {
+  "deny": [
+    "Read(./node_modules/**)",
+    "Read(./dist/**)",
+    "Read(./build/**)",
+    "Read(./.next/**)",
+    "Read(./coverage/**)",
+    "Read(./vendor/**)"
+  ]
+}
 ```
 
 **Recommended plugins** (suggest installing any they don't have):
@@ -82,7 +78,7 @@ vendor/
 Present these as "You have X, best practice is Y. Here's why Y is recommended:" and let the user decide.
 
 Common conflicts:
-- `effortLevel: "high"` vs recommended `"medium"` - Explain: medium saves 50-70% output tokens. User can type "ultrathink" for one-off deep reasoning.
+- `effortLevel: "high"` (or `xhigh`/`max`) vs recommended `"medium"` - Explain: lower effort means less thinking and fewer output tokens; Opus 5.5 and Sonnet 5.5 already default to medium. User can type "ultrathink" for one-off deep reasoning.
 - Long CLAUDE.md (over 100 lines) - Explain: every line is loaded on every turn. Suggest moving specialized sections to Skills.
 - Missing handoff workflow - Suggest adding session handoff section if they don't have context preservation strategy.
 
@@ -101,8 +97,8 @@ After presenting all recommendations, ask: "Which of these would you like me to 
 Apply changes by:
 1. **settings.json**: Use json merge - never overwrite the whole file. Read it, merge new keys, write back.
 2. **CLAUDE.md**: Add new sections at the end. Never remove or rewrite existing sections unless the user explicitly asks.
-3. **.claudeignore**: Create only if it doesn't exist. If it exists, show what's missing and offer to append.
-4. **Plugins**: Tell the user to run `/install-plugin [name]` themselves - you can't do this programmatically.
+3. **Read deny rules**: Merge into `permissions.deny`. Keep existing rules; only add what is missing.
+4. **Plugins**: Tell the user to run `/plugin install [name]@claude-plugins-official` themselves - you can't do this programmatically.
 
 Always back up files before modifying them.
 

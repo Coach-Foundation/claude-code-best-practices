@@ -30,7 +30,7 @@ cd claude-code-best-practices
 python3 claude-setup.py || python claude-setup.py
 ```
 
-Then use `cc` instead of `claude` to start.
+Then use `ccx` instead of `claude` to start.
 
 ### Quick Option B: Smart Optimizer
 
@@ -54,21 +54,18 @@ Or view it online: [coach-foundation.github.io/claude-code-best-practices/claude
 
 | Setting | What it does | Impact |
 |---------|-------------|--------|
-| MAX_THINKING_TOKENS=10000 | Caps expensive thinking tokens | ~70% thinking cost reduction |
-| Subagent model: Haiku | Uses cheaper model for helper tasks | ~80% cheaper subagents |
-| Effort level: medium | Reduces output verbosity | 50-70% fewer output tokens |
-| Auto-compact: 75% | Triggers compaction earlier | More buffer, fewer emergencies |
+| MAX_THINKING_TOKENS=10000 | Caps thinking tokens on older models (current models use the effort level instead) | Lower thinking cost on those models |
 | Context Efficiency rules | Stops Claude from echoing, narrating, re-reading | Major output reduction |
-| .claudeignore | Blocks scanning of junk files | Prevents context blowups |
+| Safety deny rules | Blocks recursive deletes, force pushes, and reading .env files | Protects your work and secrets |
 
 ## Recommended Plugins
 
 After setup, start a Claude Code session and install these:
 
 ```
-/install-plugin superpowers      # Structured workflows (planning, TDD, code review)
-/install-plugin context7          # Always-current library documentation
-/install-plugin code-simplifier   # Code quality reviews
+/plugin install superpowers@claude-plugins-official      # Structured workflows (planning, TDD, code review)
+/plugin install context7@claude-plugins-official          # Always-current library documentation
+/plugin install code-simplifier@claude-plugins-official   # Code quality reviews
 ```
 
 ## Contributing

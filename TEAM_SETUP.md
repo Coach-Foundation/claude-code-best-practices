@@ -9,6 +9,7 @@ Everything here was audited against official Anthropic docs and stress-tested by
 - **Zero permission prompts.** No more pressing "Yes" 200 times a day. Fifteen deny rules block the dangerous commands (rm -rf, force push, reading your credentials) - everything else just runs.
 - **Claude checks its own work.** A Stop hook forces a verify-review-complete pass whenever code was written, before Claude tells you it's done. Fewer "done!" messages that aren't.
 - **Claude stops repeating its helpers' guesses.** When Claude hands work to a helper agent and the helper reports back, Claude is told how much that helper actually looked at. If the helper opened nothing, Claude is told to check the claim before passing it on to you as fact. You won't see this happen - it works quietly in the background.
+- **Claude actually remembers corrections now.** Instead of a manual "lessons" file you had to remember existed, Claude saves what it learns to its own built-in memory automatically. If it forgets to save something worth remembering, a quiet nudge reminds it once per session - you won't see this either unless there's something to log.
 - **Your sessions survive.** Handoff files capture state before you run out of context. Open a new session, type `read handoff`, continue where you left off.
 - **Structured workflows on demand.** Type "grade this" for rubric-based quality loops, "grill me" to stress-test a plan, "update github" for docs + commit + push + handoff in one command. Plus specialist agents (architect, code-verifier, mechanic) with the right model pre-picked for each job.
 
@@ -61,7 +62,7 @@ The installer replaces CLAUDE.md and settings.json (timestamped backups are made
 You'll keep everything you like and gain the verification hooks, guardrails, and session memory. If something feels wrong, your backups are in `~/.claude/` with timestamps and the plugin uninstalls in one command.
 
 **Windows?**
-Run `python claude-setup.py` instead. Everything works (plugin skills, agents, guardrails, settings) EXCEPT the four hook scripts, which are bash - they need WSL or Git Bash to fire. If you're on plain Windows you still get the full plugin + guardrails; the automatic session-context loading and stop-time self-review just won't run. (The hooks now ship inside the plugin so they auto-update, but they are still bash - native Windows support is on the roadmap.)
+Run `python claude-setup.py` instead. Everything works (plugin skills, agents, guardrails, settings). The six hook scripts are bash: Claude Code runs them through Git Bash automatically if Git for Windows is installed. Five of them also call `python3`, so make sure typing `python3 --version` in Git Bash works; if it doesn't, those hooks can't do their job. Without Git for Windows you still get the full plugin + guardrails; the automatic session-context loading and stop-time self-review just won't run.
 
 **Do I need to update this myself later?**
 No. The team plugin is installed with auto-update on, so new skills, agents, and hooks arrive automatically when you restart Claude Code - you never re-run anything for those. You only re-run the setup paste-block if the core instructions or safety rules change, and we'll tell you in Slack when that happens (rare).

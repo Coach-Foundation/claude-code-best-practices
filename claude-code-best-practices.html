@@ -151,7 +151,7 @@
 
 <div class="tip">
   <span class="label">Use handoff before context gets high <span class="impact high">High Impact</span></span>
-  <p>Watch the context percentage in your status bar. When it reaches around 50%, type <code>handoff</code>. Claude saves everything to a file. Then type <code>/exit</code> and start fresh with <code>cc</code>. Your next session picks up exactly where you left off.</p>
+  <p>Watch the context percentage in your status bar. When it reaches around 50%, type <code>handoff</code>. Claude saves everything to a file. Then type <code>/exit</code> and start fresh with <code>ccx</code>. Your next session picks up exactly where you left off.</p>
   <p><strong>Why not wait?</strong> When context gets too full, Claude automatically compresses the conversation, which can lose important details about your work. A clean handoff preserves everything perfectly.</p>
 </div>
 
@@ -203,16 +203,16 @@
   <tr>
     <td><strong>Sonnet</strong></td>
     <td>Daily coding, tests, simple edits</td>
-    <td>~4x</td>
+    <td>~2x</td>
   </tr>
   <tr>
     <td><strong>Opus</strong></td>
     <td>Complex architecture, subtle debugging</td>
-    <td>~15x</td>
+    <td>~4x</td>
   </tr>
 </table>
 
-<p>Type <code>/model sonnet</code> or <code>/model opus</code> to switch mid-session. For everyday work, Sonnet is usually enough. Switch to Opus only when you genuinely need deep reasoning.</p>
+<p>Type <code>/model sonnet</code> or <code>/model opus</code> to switch mid-session. Pro and Max plans now start on Opus. For everyday work, <code>/model sonnet</code> is usually enough. Switch to Opus only when you genuinely need deep reasoning.</p>
 
 <p>If a task is straightforward and you want even faster responses, type <code>/effort low</code>. For hard problems, type <code>ultrathink</code> in your message for one-off deep reasoning.</p>
 
@@ -222,7 +222,7 @@
 <div class="quick-ref">
   <h3>Essential</h3>
   <ul>
-    <li><code>cc</code> - Start Claude Code with the safe, optimized wrapper</li>
+    <li><code>ccx</code> - Start Claude Code with the safe, optimized wrapper</li>
     <li><code>handoff</code> - Save your progress so the next session picks up where you left off</li>
     <li><code>/btw</code> - Ask a side question without adding to conversation history</li>
     <li><code>Escape</code> - Stop Claude mid-action and redirect</li>
@@ -234,10 +234,10 @@
   <ul>
     <li><code>/clear</code> - Wipe conversation and start fresh (when Claude is confused)</li>
     <li><code>/context</code> - See how your token budget is being used</li>
-    <li><code>/cost</code> - See costs for the current session</li>
+    <li><code>/usage</code> - See your usage and plan limits (<code>/cost</code> does the same)</li>
     <li><code>/model [name]</code> - Switch model (sonnet, opus, haiku)</li>
-    <li><code>/effort [level]</code> - Adjust reasoning depth (low, medium, high)</li>
-    <li><code>Escape, Escape</code> - Undo the last action entirely</li>
+    <li><code>/effort [level]</code> - Adjust reasoning depth (low, medium, high, xhigh, max)</li>
+    <li><code>/rewind</code> - Undo: roll code and conversation back to an earlier point (or press Escape twice with an empty prompt)</li>
   </ul>
 </div>
 
@@ -256,7 +256,7 @@
 
 <div class="tip">
   <span class="label">Don't use Opus for everything</span>
-  <p>Opus costs ~15x more per token than Haiku. Most coding tasks work perfectly fine on Sonnet.</p>
+  <p>Opus costs about 4x more per token than Haiku and 2x more than Sonnet. Most coding tasks work perfectly fine on Sonnet.</p>
 </div>
 
 <div class="tip">
@@ -265,7 +265,7 @@
 </div>
 
 <div class="footer">
-  <p>Based on official Anthropic documentation and community best practices. Last updated April 2026.</p>
+  <p>Based on official Anthropic documentation and community best practices. Last updated September 2026.</p>
   <p><a href="index.html">Back to setup</a></p>
 </div>
 

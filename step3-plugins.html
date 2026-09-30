@@ -82,6 +82,8 @@
     font-size: 12px;
     display: inline-block;
     margin: 8px 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .plugin-description {
@@ -151,17 +153,17 @@
     <p class="instruction">You're still in your Claude Code session. Type each of these one at a time, pressing Enter after each:</p>
 
     <div class="plugin-item">
-      <div class="plugin-command">/install-plugin superpowers</div>
+      <div class="plugin-command">/plugin install superpowers@claude-plugins-official</div>
       <div class="plugin-description">Adds structured workflows for planning, debugging, and code review. Helps you work faster with built-in superpowers.</div>
     </div>
 
     <div class="plugin-item">
-      <div class="plugin-command">/install-plugin context7</div>
+      <div class="plugin-command">/plugin install context7@claude-plugins-official</div>
       <div class="plugin-description">Gives Claude access to the latest library and framework documentation. Never worry about stale docs again.</div>
     </div>
 
     <div class="plugin-item">
-      <div class="plugin-command">/install-plugin code-simplifier</div>
+      <div class="plugin-command">/plugin install code-simplifier@claude-plugins-official</div>
       <div class="plugin-description">Reviews your code for quality and efficiency. Catches common issues and suggests improvements.</div>
     </div>
 
