@@ -1,4 +1,6 @@
-# Student starter pack
+# Student helper pack
+
+Folder name and CLAUDE.md markers say "starter pack" for history; every student-facing message says "helper pack" (the hackathon page itself is called "Starter Pack").
 
 A small, safe pack for first-time Claude Code users (built for the students of a university Claude Code hackathon). It is a beginner edition of this repo's settings, with everything that could break a setup or burn a Claude Pro plan's limits left out.
 
@@ -7,24 +9,27 @@ A small, safe pack for first-time Claude Code users (built for the students of a
 Only AFTER the hackathon page's "Set up Claude Code with your own account" step (the switch-to-own-account script) (the installer refuses while the hackathon rules block is still in `~/.claude/CLAUDE.md`):
 
 ```
-Install my Claude starter pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/student-v1/student-pack/install.sh | bash
+Install my Claude helper pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/student-v1/student-pack/install.sh | bash
 ```
 
 To remove it:
 
 ```
-Remove my Claude starter pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/student-v1/student-pack/remove.sh | bash
+Remove my Claude helper pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/student-v1/student-pack/remove.sh | bash
 ```
 
 ## What it installs
 
 | Piece | Why a beginner wants it |
 |---|---|
-| `handoff` skill | Type `handoff` before a chat gets too long, and Claude saves where you are in `HANDOFF.md` so a fresh chat can continue. The note stays off GitHub (added to `.gitignore`), because student projects are often public websites. |
+| `handoff` skill | Type `handoff` before a chat gets too long, and Claude saves where you are in `HANDOFF.md` so a fresh chat can continue. It writes the note in the project's git folder (found with `git rev-parse --show-toplevel`, since Claude often starts one folder above the project) and always lists it in that folder's `.gitignore`, because student projects are often public websites. |
 | `grill-me` skill | Type `grill me` and Claude asks you questions about your idea, one at a time, before building, so you build the right thing. |
 | 6 short lines at the end of `~/.claude/CLAUDE.md` | Claude replies in your language, uses simple words, asks before deleting files, and reminds you about handoff. |
 
 ## What it never does
+
+- Never prints "check your internet" for a missing address: an HTTP 404 (tag missing or wrong URL) says "Ask your hackathon team". A missing tag on the OUTER `install.sh` download cannot be caught by the script (bash receives nothing); Claude then reports curl's 404 error.
+- Re-running (or a later `student-v2`) replaces the lines between its markers instead of adding a second copy; if the student edited the block and removed the end marker, it changes nothing.
 
 - Never touches `settings.json`: no model change, no permission change, no hooks, no plugins, nothing that updates itself.
 - Never overwrites a skill the student made (it only replaces files that carry its `<!-- starter-pack -->` tag).
@@ -49,6 +54,6 @@ The same file runs on Mac (bash) and Windows (Git Bash, the shell Claude Code al
 
 1. Deploy (`./scripts/deploy.sh`) so `student-pack/` is on the public repo's `main`.
 2. Manual test on a Mac and a Windows laptop, each on Claude Pro after the switch step. Paste this test line (same as the student line, but reading from `main` because the tag does not exist yet), restart Claude Code, type `grill me`, then `handoff`:
-   `Install my Claude starter pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/main/student-pack/install.sh | PACK_BASE=https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/main/student-pack bash`
+   `Install my Claude helper pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/main/student-pack/install.sh | PACK_BASE=https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/main/student-pack bash`
 3. Tag the public repo `student-v1` and push the tag. Only then give the line to students.
 4. A change after release means a new tag (`student-v2`) and a new line. Never move `student-v1`.

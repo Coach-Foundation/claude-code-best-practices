@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Student starter pack installer. Students never run this by hand: they paste one
+# Student helper pack installer (folder name: student-pack; markers keep "starter pack"). Students never run this by hand: they paste one
 # line into Claude Code and Claude runs it. Works in macOS bash 3.2 and Git Bash
 # on Windows (the shell Claude Code uses there). Needs only bash, curl, grep, awk.
 # Never touches settings.json. Safe to run again.
@@ -16,6 +16,7 @@ main() {
   local CLAUDE_DIR="$HOME_DIR/.claude"
   local CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
   local START='<!-- >>> starter pack >>> -->'
+  local END='<!-- <<< starter pack <<< -->'
   local WRITE_FAIL="Nothing more was installed: I could not save files in $CLAUDE_DIR. Copy this message and ask Claude for help."
 
   fail() { echo "$1"; exit 1; }
@@ -23,7 +24,12 @@ main() {
   # The hackathon rules block tells Claude to write only inside the project folder,
   # so the student must run the hackathon page's "Set up Claude Code with your own account" step first.
   if [ -f "$CLAUDE_MD" ] && grep -qF '<!-- >>> hackathon rules >>> -->' "$CLAUDE_MD"; then
-    fail "Please do the step \"Set up Claude Code with your own account\" first. Then paste the starter pack line again."
+    fail "Please do the step \"Set up Claude Code with your own account\" first. Then paste the helper pack line again."
+  fi
+
+  # A start marker without its end marker means the student edited the block: touch nothing.
+  if [ -f "$CLAUDE_MD" ] && grep -qF "$START" "$CLAUDE_MD" && ! grep -qF "$END" "$CLAUDE_MD"; then
+    fail "Nothing was installed: the helper pack lines in ~/.claude/CLAUDE.md were changed. Ask Claude to delete them, then paste the helper pack line again."
   fi
 
   command -v curl >/dev/null 2>&1 || fail "Nothing was installed: the curl command is missing on this computer."
@@ -38,7 +44,12 @@ main() {
   local f
   for f in skills/handoff/SKILL.md skills/grill-me/SKILL.md claude-md-lines.md; do
     mkdir -p "$tmp/$(dirname "$f")" || fail "$WRITE_FAIL"
-    curl -fsSL "$PACK_BASE/$f" -o "$tmp/$f" || fail "Nothing was installed: could not download the pack. Check your internet and try again."
+    curl -fsSL "$PACK_BASE/$f" -o "$tmp/$f"
+    case $? in
+      0) ;;
+      22) fail "Nothing was installed: the pack address was not found. Ask your hackathon team." ;;
+      *) fail "Nothing was installed: could not download the pack. Check your internet and try again." ;;
+    esac
     grep -qE 'starter[- ]pack' "$tmp/$f" || fail "Nothing was installed: the downloaded file looks wrong ($f)."
   done
 
@@ -53,8 +64,16 @@ main() {
     mkdir -p "$CLAUDE_DIR/skills/$s" && cp "$tmp/skills/$s/SKILL.md" "$dest" || fail "$WRITE_FAIL"
   done
 
-  # Add the starter pack lines once, at the end, keeping everything already there.
-  if ! { [ -f "$CLAUDE_MD" ] && grep -qF "$START" "$CLAUDE_MD"; }; then
+  if [ -f "$CLAUDE_MD" ] && grep -qF "$START" "$CLAUDE_MD"; then
+    # Already there (older or same version): replace only the lines between the markers.
+    awk -v s="$START" -v e="$END" -v f="$tmp/claude-md-lines.md" '
+      { t=$0; sub(/\r$/, "", t) }
+      t==s { while ((getline l < f) > 0) print l; skip=1; next }
+      t==e { skip=0; next }
+      !skip { print }
+    ' "$CLAUDE_MD" > "$CLAUDE_MD.tmp" && mv "$CLAUDE_MD.tmp" "$CLAUDE_MD" || fail "$WRITE_FAIL"
+  else
+    # First install: add the lines at the end, keeping everything already there.
     mkdir -p "$CLAUDE_DIR" || fail "$WRITE_FAIL"
     [ -e "$CLAUDE_MD" ] && [ ! -f "$CLAUDE_MD" ] && fail "$WRITE_FAIL"
     if [ -s "$CLAUDE_MD" ]; then
@@ -63,7 +82,7 @@ main() {
     cat "$tmp/claude-md-lines.md" >> "$CLAUDE_MD" || fail "$WRITE_FAIL"
   fi
 
-  local msg="Done. Starter pack installed."
+  local msg="Done. Helper pack installed."
   [ -n "$skipped" ] && msg="$msg You already had your own:$skipped, so I kept yours."
   echo "$msg Close Claude Code and open it again. Then type: grill me"
 }
