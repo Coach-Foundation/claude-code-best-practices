@@ -47,7 +47,7 @@ main() {
     curl -fsSL "$PACK_BASE/$f" -o "$tmp/$f"
     case $? in
       0) ;;
-      22) fail "Nothing was installed: the pack address was not found. Ask your hackathon team." ;;
+      22) fail "Nothing was installed: the pack address was not found." ;;
       *) fail "Nothing was installed: could not download the pack. Check your internet and try again." ;;
     esac
     grep -qE 'starter[- ]pack' "$tmp/$f" || fail "Nothing was installed: the downloaded file looks wrong ($f)."

@@ -28,7 +28,7 @@ Remove my Claude helper pack. Run this command in bash and tell me the result in
 
 ## What it never does
 
-- Never prints "check your internet" for a missing address: an HTTP 404 (tag missing or wrong URL) says "Ask your hackathon team". A missing tag on the OUTER `install.sh` download cannot be caught by the script (bash receives nothing); Claude then reports curl's 404 error.
+- Never prints "check your internet" for a missing address: an HTTP 404 (tag missing or wrong URL) says "the pack address was not found" (no "ask your team": students must be independent after the hackathon; Claude explains the message). A missing tag on the OUTER `install.sh` download cannot be caught by the script (bash receives nothing); Claude then reports curl's 404 error.
 - Re-running (or a later `student-v2`) replaces the lines between its markers instead of adding a second copy; if the student edited the block and removed the end marker, it changes nothing.
 
 - Never touches `settings.json`: no model change, no permission change, no hooks, no plugins, nothing that updates itself.
