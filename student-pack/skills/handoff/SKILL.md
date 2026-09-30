@@ -6,11 +6,11 @@ description: Save where we are so a new chat can continue. Use when the user typ
 
 # Handoff
 
-Write a short note so a new chat can continue this work.
+Write a short note so a new chat can continue this work. The note is private: it must never go on GitHub, because the project may be a public website.
 
 1. Look at what we did in this chat. If this folder uses git, also run `git status --short` and `git log --oneline -5`.
-2. If `docs/SESSION_HANDOFF.md` already exists, read it first.
-3. Write `docs/SESSION_HANDOFF.md` in this folder (make the `docs` folder if needed). Replace the old note. Use simple English and short lines:
+2. If `HANDOFF.md` already exists in this folder, read it first.
+3. Write `HANDOFF.md` in the main folder of this project. Replace the old note. Use simple English and short lines:
 
 ```markdown
 # Handoff - [today's date]
@@ -32,5 +32,9 @@ Write a short note so a new chat can continue this work.
 - [file] - [what it is for]
 ```
 
-4. Then tell the user, in the language they write in:
+4. Keep it off GitHub. If this folder uses git:
+   - Make sure `.gitignore` in the main folder has a line `HANDOFF.md` (create the file or add the line if missing).
+   - If `git ls-files HANDOFF.md` prints anything, run `git rm --cached HANDOFF.md` so git stops sharing it (the file stays on the computer).
+
+5. Then tell the user, in the language they write in:
 "Saved. Now type /clear to start a fresh chat. Then type: read the handoff"

@@ -21,9 +21,9 @@ main() {
   fail() { echo "$1"; exit 1; }
 
   # The hackathon rules block tells Claude to write only inside the project folder,
-  # so the student must run the "switch to my own Claude account" step first.
+  # so the student must run the hackathon page's "Set up Claude Code with your own account" step first.
   if [ -f "$CLAUDE_MD" ] && grep -qF '<!-- >>> hackathon rules >>> -->' "$CLAUDE_MD"; then
-    fail "Please do the \"Switch to my own Claude account\" step first. Then paste the starter pack line again."
+    fail "Please do the step \"Set up Claude Code with your own account\" first. Then paste the starter pack line again."
   fi
 
   command -v curl >/dev/null 2>&1 || fail "Nothing was installed: the curl command is missing on this computer."

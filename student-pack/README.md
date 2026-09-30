@@ -4,7 +4,7 @@ A small, safe pack for first-time Claude Code users (built for the students of a
 
 ## What the student pastes into Claude Code (one line)
 
-Only AFTER the hackathon "Switch to my own Claude account" step (the installer refuses while the hackathon rules block is still in `~/.claude/CLAUDE.md`):
+Only AFTER the hackathon page's "Set up Claude Code with your own account" step (the switch-to-own-account script) (the installer refuses while the hackathon rules block is still in `~/.claude/CLAUDE.md`):
 
 ```
 Install my Claude starter pack. Run this command in bash and tell me the result in simple words: curl -fsSL https://raw.githubusercontent.com/Coach-Foundation/claude-code-best-practices/student-v1/student-pack/install.sh | bash
@@ -20,7 +20,7 @@ Remove my Claude starter pack. Run this command in bash and tell me the result i
 
 | Piece | Why a beginner wants it |
 |---|---|
-| `handoff` skill | Type `handoff` before a chat gets too long, and Claude saves where you are so a fresh chat can continue. |
+| `handoff` skill | Type `handoff` before a chat gets too long, and Claude saves where you are in `HANDOFF.md` so a fresh chat can continue. The note stays off GitHub (added to `.gitignore`), because student projects are often public websites. |
 | `grill-me` skill | Type `grill me` and Claude asks you questions about your idea, one at a time, before building, so you build the right thing. |
 | 6 short lines at the end of `~/.claude/CLAUDE.md` | Claude replies in your language, uses simple words, asks before deleting files, and reminds you about handoff. |
 
