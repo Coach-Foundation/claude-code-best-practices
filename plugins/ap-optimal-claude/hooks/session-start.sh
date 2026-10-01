@@ -101,7 +101,10 @@ import json, sys, os
 # SCALAR keys only - the loop below does a flat overwrite (s[k] = v), so never add
 # merge-semantics keys like 'permissions' here or it would clobber a user's own rules.
 # Deny-rule changes must go through re-running the installer, not this hook.
-MANAGED = {'model': 'opusplan', 'skillListingBudgetFraction': 0.02}
+# 'model' was removed in 1.5.1: forcing it every session silently overwrote each
+# person's own /model choice (e.g. back to opusplan = Sonnet for execution).
+# The installer still sets opusplan for NEW installs only.
+MANAGED = {'skillListingBudgetFraction': 0.02}
 sp = os.path.expanduser('~/.claude/settings.json')
 try:
     with open(sp) as f:

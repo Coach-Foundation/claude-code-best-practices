@@ -34,7 +34,7 @@ These are new settings/features the user doesn't have. Add them unless the user 
 ```
 - MAX_THINKING_TOKENS: Caps thinking tokens at 10K on older models with a fixed thinking budget. Thinking tokens are billed as output tokens. Current models (Opus 5.5, Sonnet 5.5) ignore this cap and use the effort level instead.
 - CLAUDE_CODE_SUBAGENT_MODEL: Default model for subagents that don't pick their own. A model Claude passes when spawning, or a `model` field in the agent's file, wins over it. Add `"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"` only if the user wants Haiku forced on every subagent.
-- CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: Triggers compaction earlier (at 75% of the compaction window). It can only lower the trigger point and only applies in sessions that compact before the model's context limit. `/autocompact` changes the window; `DISABLE_AUTO_COMPACT=1` turns auto-compaction off.
+- CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: Triggers compaction earlier (at 75% of the compaction window). It can only lower the trigger point and only applies in sessions that compact before the model's context limit. `/autocompact` changes the window; `CLAUDE_CODE_DISABLE_AUTO_COMPACT=1` (or the `autoCompactEnabled: false` setting) turns auto-compaction off.
 
 **Default model** (add if missing):
 ```json

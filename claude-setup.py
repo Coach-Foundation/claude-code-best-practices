@@ -52,6 +52,8 @@ def get_platform_section():
             "macOS paths, and macOS-specific tools (pbcopy, open, etc.). Never reference "
             "Windows or Linux shortcuts - use the Mac equivalent (e.g., Cmd+Option+I for "
             "browser dev tools).\n"
+            "- macOS has no GNU `timeout` command. Do not use it; use the Bash tool's "
+            "timeout parameter or run_in_background instead.\n"
         )
     elif IS_WINDOWS:
         return (
@@ -103,8 +105,9 @@ Default to appropriate skepticism, not agreement:
 - **Marketing skills plugin:** When working on any project involving marketing, growth, copywriting, SEO, content strategy, social media, pricing, sales, product positioning, referrals, or any other business/go-to-market work - enable the marketingskills plugin for that project by adding `"marketing-skills@marketingskills": true` to `enabledPlugins` in `.claude/settings.local.json`. Do this automatically at session start without being asked.
 
 ## Open Source First
-- Before writing custom code for any non-trivial problem (parsing, auth, validation, queuing, caching, etc.), check if a well-maintained open-source library already solves it.
-- Prefer established libraries over custom implementations unless there is a specific reason not to (licensing, bundle size, security, no good option exists).
+- Before building anything non-trivial - code, a script, a tool, a hook, a skill, an agent, an automation, a whole feature - search for an existing open-source solution first: libraries, GitHub repos, CLIs, Claude Code plugins/skills/MCP servers, templates. This applies at every step, not just at project start, and to what we publish too.
+- Use a good existing one instead of reinventing the wheel. "Good" means maintained, widely used, permissive license, and safe (read its code or reputation before trusting it).
+- Build custom only when nothing good exists or there is a specific reason (licensing, size, security, poor fit), and say in one line what you checked and why it was not used.
 
 ## Software Engineering Principles
 
@@ -204,8 +207,10 @@ Every commit must be thorough. Follow this format:
 - Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build
 - Never write "fix stuff", "updates", or single-line messages for multi-file changes.
 
-## No PII
-- Never include real names, emails, phone numbers, addresses, IPs, usernames, client names, API keys, or tokens in commits, comments, docs, or READMEs.
+## No PII in Public-Facing Content
+- Public-facing means anything people outside can see: public repos and their commit messages (including commit messages that a deploy copies to a public repo), published sites and artifacts, public gists, package releases. Never put real names, emails, phone numbers, addresses, IPs, usernames or client names there. The one exception is my own name where I have chosen to publish under it.
+- Private repos and local files may contain PII. Before anything moves from private to public, check it for PII.
+- API keys, tokens and passwords are secrets, not PII: never commit them anywhere, public or private.
 
 ## Command Style
 - Never use multi-line bash commands. Chain on one line with && or ; or pipes.
@@ -255,10 +260,14 @@ Every commit must be thorough. Follow this format:
 def get_settings():
     settings = {
         "permissions": {
-            "defaultMode": "bypassPermissions",
-            # Deny rules are enforced even in bypassPermissions mode
-            # (verified live 2026-06-11). They replace the old cc-wrapper
-            # blocklist, which used --disallowedTools and could be shadowed.
+            # Auto mode: a safety classifier reviews risky actions instead of
+            # prompting (Anthropic's built-in default since v2.1.283; the docs
+            # reserve bypassPermissions for isolated containers/VMs). Deny rules
+            # still bind in every mode (re-verified live in auto mode 2026-10-01).
+            # Where auto mode is unavailable, Claude Code starts in Manual mode.
+            "defaultMode": "auto",
+            # The deny list replaces the old cc-wrapper blocklist, which used
+            # --disallowedTools and could be shadowed.
             "deny": [
                 "Bash(rm -rf:*)",
                 "Bash(rm -fr:*)",
@@ -288,6 +297,7 @@ def get_settings():
         "skillListingBudgetFraction": 0.02,
         # Opus for plan/think mode, Sonnet for execution - automatic smart routing.
         # Team gets stronger reasoning when planning without paying Opus rates for everything.
+        # Default for NEW installs only: merge_settings keeps any model the user already chose.
         "model": "opusplan",
         # Pre-declare the team marketplace with auto-update ON and the plugin
         # enabled, so a single installer run wires up continuous updates: skills,
@@ -379,9 +389,13 @@ def merge_settings(existing, managed):
     result = dict(existing)  # carry over every unknown top-level key untouched
 
     # Baseline keys the installer owns outright
-    for key in ("enableAllProjectMcpServers", "env", "autoCompactWindow", "statusLine", "model"):
+    for key in ("enableAllProjectMcpServers", "env", "autoCompactWindow", "statusLine"):
         if key in managed:
             result[key] = managed[key]
+
+    # model: a default for new installs only - never overwrite a model the user picked
+    if "model" in managed and "model" not in result:
+        result["model"] = managed["model"]
 
     # permissions: keep user keys (e.g. allow), enforce defaultMode, UNION the deny baseline
     perms = dict(result.get("permissions", {}))
@@ -905,8 +919,9 @@ def setup():
     print("  rm -rf / rm -fr / sudo rm   (recursive deletion)")
     print("  git push --force / -f       (overwriting remote history)")
     print("  Read .env / .env.*          (secrets stay out of context)")
-    print("  These bind even in bypassPermissions mode (verified live).")
-    print("  Everything else runs without prompts.\n")
+    print("  These are hard blocks in every permission mode (verified live).")
+    print("  Default mode is 'auto': a safety check stops other risky actions")
+    print("  (wiping unsaved work, running downloaded scripts) without asking you each time.\n")
 
 
 if __name__ == "__main__":

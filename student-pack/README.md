@@ -1,5 +1,7 @@
 # Student helper pack
 
+> **Side deliverable, frozen.** Built for the `cf/claude-code-hackathon` project, not part of this repo's end goal. Released as `student-v1` on 2026-09-30. Change it only when that project reports a concrete bug, and ship the fix as `student-v2`.
+
 Folder name and CLAUDE.md markers say "starter pack" for history; every student-facing message says "helper pack" (the hackathon page itself is called "Starter Pack").
 
 A small, safe pack for first-time Claude Code users (built for the students of a university Claude Code hackathon). It is a beginner edition of this repo's settings, with everything that could break a setup or burn a Claude Pro plan's limits left out.
