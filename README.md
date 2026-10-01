@@ -2,9 +2,19 @@
 
 Save tokens, reduce costs, and get better results from Claude Code.
 
-Based on official Anthropic documentation, community benchmarks, and real-world testing. These practices can reduce your Claude Code usage by 50-70%.
+Based on official Anthropic documentation, community benchmarks, and real-world testing: safer defaults (hard blocks on destructive commands, a safety check on risky actions), leaner context, and skills and hooks that keep sessions on track.
 
 ## Get Started
+
+### Easiest: let Claude Code do it
+
+Open Claude Code and paste this:
+
+```
+Set up my Claude Code with https://github.com/Coach-Foundation/claude-code-best-practices . First explain in plain words what it will change on my computer and wait for my OK. Then back up my current Claude settings, clone the repo and run its installer (python3 claude-setup.py), and tell me what changed.
+```
+
+Your existing settings are backed up before anything changes, your own `~/.claude/CLAUDE.md` is left alone, and updates arrive automatically afterwards.
 
 ### Interactive Setup Wizard (recommended)
 
