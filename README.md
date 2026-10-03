@@ -70,11 +70,14 @@ Or view it online: [coach-foundation.github.io/claude-code-best-practices/claude
 
 ## Recommended Plugins
 
-After setup, start a Claude Code session and install these:
+The setup installs these for you:
+
+- **superpowers**: structured workflows (planning, TDD, code review)
+- **context7**: always-current library documentation (sign in once with `/mcp`)
+
+Optional, inside a Claude Code session:
 
 ```
-/plugin install superpowers@claude-plugins-official      # Structured workflows (planning, TDD, code review)
-/plugin install context7@claude-plugins-official          # Always-current library documentation
 /plugin install code-simplifier@claude-plugins-official   # Code quality reviews
 ```
 
