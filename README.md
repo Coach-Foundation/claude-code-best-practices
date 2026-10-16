@@ -1,3 +1,5 @@
+> **This setup has moved.** It is now kept up to date at **[https://apurv.org/best-claude-code-settings/](https://apurv.org/best-claude-code-settings/)**. This copy is archived and no longer updated. If you installed from here, open that page, copy the setup prompt and paste it into Claude Code once.
+
 # Claude Code Best Practices
 
 Save tokens, reduce costs, and get better results from Claude Code.

@@ -1,3 +1,5 @@
+> **This setup has moved.** It is now kept up to date at **[https://apurv.org/best-claude-code-settings/](https://apurv.org/best-claude-code-settings/)**. This copy is archived and no longer updated. If you installed from here, open that page, copy the setup prompt and paste it into Claude Code once.
+
 # Get the Team Claude Code Setup (10 minutes)
 
 **Stop babysitting Claude Code.** This setup makes Claude verify its own work, remember your sessions, and stop asking permission for everything - while guardrails block the genuinely dangerous stuff.
